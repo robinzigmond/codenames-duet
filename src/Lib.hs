@@ -10,7 +10,7 @@ import           Control.Concurrent             (MVar, modifyMVar, modifyMVar_,
                                                  readMVar)
 import           Control.Exception              (finally)
 import           Control.Monad                  (forM_, forever)
-import           Data.Text                      (Text)
+import           Data.Text                      (pack, Text)
 import           Network.HTTP.Types             (status400)
 import           Network.Wai                    (Application, responseLBS)
 import           Network.Wai.Application.Static (defaultWebAppSettings,
@@ -20,6 +20,8 @@ import           Network.WebSockets             (Connection, ServerApp,
                                                  acceptRequest, forkPingThread,
                                                  receiveData, sendTextData)
 import           WaiAppStatic.Types             (unsafeToPiece)
+
+import           GamePlay                       (Card, randomCardsIO)
 
 httpApp :: Application
 httpApp =
@@ -45,7 +47,7 @@ type ClientId = Int
 type Client = (ClientId, Connection)
 
 data Game =
-  Game (Maybe Client) (Maybe Client)
+  Game (Maybe Client) (Maybe Client) [[Card]]
 
 data State =
   State [Client] [Game]
@@ -60,7 +62,14 @@ connectClient :: Connection -> MVar State -> IO ClientId
 connectClient conn stateRef =
   modifyMVar stateRef $ \(State clients games) -> do
     let clientId = nextId clients
-    return (State ((clientId, conn) : clients) games, clientId)
+    -- generate new game with a random set of cards, and assign the new
+    -- client to that game
+    cards <- randomCardsIO
+    -- send data back, as a simple string for now
+    sendTextData conn . pack $ show cards
+    let newClient = (clientId, conn)
+    let newGame = Game (Just newClient) Nothing cards
+    return (State (newClient : clients) (newGame : games), clientId)
 
 withoutClient :: ClientId -> [Client] -> [Client]
 withoutClient clientId = filter ((/= clientId) . fst)

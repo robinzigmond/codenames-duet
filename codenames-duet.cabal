@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6c1aabe5bdfa6059f01f30f5ea7d78e2042a2278aaa5dc7332ddc16fed4d5078
+-- hash: 57baff6e337db9c9a797f1620796659ef30353588e3f909c2539cf5e2b7b7cea
 
 name:           codenames-duet
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      GamePlay
       Lib
   other-modules:
       Paths_codenames_duet
@@ -35,6 +36,8 @@ library
   build-depends:
       base >=4.7 && <5
     , http-types
+    , random
+    , split
     , text
     , wai
     , wai-app-static
@@ -54,6 +57,8 @@ executable codenames-duet-exe
       base >=4.7 && <5
     , codenames-duet
     , http-types
+    , random
+    , split
     , text
     , wai
     , wai-app-static
@@ -74,6 +79,8 @@ test-suite codenames-duet-test
       base >=4.7 && <5
     , codenames-duet
     , http-types
+    , random
+    , split
     , text
     , wai
     , wai-app-static
