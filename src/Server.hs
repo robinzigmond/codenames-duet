@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lib
+module Server
   ( wsApp
   , httpApp
   , State(..)
@@ -10,7 +10,8 @@ import           Control.Concurrent             (MVar, modifyMVar, modifyMVar_,
                                                  readMVar)
 import           Control.Exception              (finally)
 import           Control.Monad                  (forM_, forever)
-import           Data.Text                      (pack, Text)
+import           Data.Aeson                     (encode)
+import           Data.Text                      (Text)
 import           Network.HTTP.Types             (status400)
 import           Network.Wai                    (Application, responseLBS)
 import           Network.Wai.Application.Static (defaultWebAppSettings,
@@ -65,8 +66,8 @@ connectClient conn stateRef =
     -- generate new game with a random set of cards, and assign the new
     -- client to that game
     cards <- randomCardsIO
-    -- send data back, as a simple string for now
-    sendTextData conn . pack $ show cards
+    -- send data back
+    sendTextData conn $ encode cards
     let newClient = (clientId, conn)
     let newGame = Game (Just newClient) Nothing cards
     return (State (newClient : clients) (newGame : games), clientId)

@@ -5,7 +5,7 @@ import           Network.Wai.Handler.Warp       (run)
 import           Network.Wai.Handler.WebSockets (websocketsOr)
 import           Network.WebSockets             (defaultConnectionOptions)
 
-import           Lib                            (State (..), httpApp, wsApp)
+import           Server                         (State (..), httpApp, wsApp)
 
 main :: IO ()
 main = do
