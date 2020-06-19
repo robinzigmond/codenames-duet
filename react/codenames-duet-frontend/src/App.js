@@ -17,7 +17,7 @@ const App = () => {
     if (lastJsonMessage) {
       console.log(lastJsonMessage);
       if (lastJsonMessage.type === 'CardsForGame') {
-        setCards(JSON.parse(lastJsonMessage.message));
+        setCards(lastJsonMessage.message);
       }
     }
   }, [lastJsonMessage]);

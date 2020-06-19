@@ -11,9 +11,13 @@ import           Control.Concurrent             (MVar, modifyMVar, modifyMVar_,
                                                  readMVar)
 import           Control.Exception              (finally)
 import           Control.Monad                  (forM_, forever)
-import           Data.Aeson                     (FromJSON (..), ToJSON (..),
-                                                 Value (Object), decode, encode,
-                                                 object, (.:), (.=))
+import           Data.Aeson                     (FromJSON (..), Options,
+                                                 SumEncoding (TaggedObject),
+                                                 ToJSON (..), Value (Object),
+                                                 decode, defaultOptions, encode,
+                                                 genericParseJSON,
+                                                 genericToJSON, sumEncoding,
+                                                 tagSingleConstructors)
 import           Data.ByteString.Lazy           (ByteString)
 import           GHC.Generics                   (Generic)
 import           Network.HTTP.Types             (status400)
@@ -53,31 +57,51 @@ type ClientId = Int
 
 type Client = (ClientId, Connection)
 
+type GameId = ByteString
+
 data Game =
-  Game (Maybe Client) (Maybe Client) [[Card]]
+  Game
+    { gameId  :: GameId
+    , player1 :: Maybe ClientId
+    , player2 :: Maybe ClientId
+    , cards   :: [[Card]]
+    }
 
 data State =
   State [Client] [Game]
 
-data MessageType
-  = JoinedGame
-  | CardsForGame
-  deriving (Eq, Ord, Generic)
+data MessageIn =
+  JoinedGame GameId
+  deriving (Eq, Generic)
 
-instance FromJSON MessageType
+customOptions :: Options
+customOptions =
+  defaultOptions
+    {sumEncoding = TaggedObject "type" "message", tagSingleConstructors = True}
 
-instance ToJSON MessageType
+instance FromJSON ByteString where
+  parseJSON = fmap fromTextLazy . parseJSON
 
-data SocketMessage =
-  SocketMessage MessageType ByteString
+instance ToJSON ByteString where
+  toJSON = toJSON . toTextLazy
 
-instance FromJSON SocketMessage where
-  parseJSON (Object v) =
-    SocketMessage <$> (v .: "type") <*> (fromTextLazy <$> (v .: "message"))
+instance FromJSON MessageIn where
+  parseJSON = genericParseJSON customOptions
 
-instance ToJSON SocketMessage where
-  toJSON (SocketMessage msgtype msg) =
-    object ["type" .= toJSON msgtype, "message" .= toJSON (toTextLazy msg)]
+data MessageOut =
+  CardsForGame [[Card]]
+  deriving (Eq, Generic)
+
+instance ToJSON MessageOut where
+  toJSON = genericToJSON customOptions
+
+joinGame :: ClientId -> Game -> Maybe Game
+joinGame clientId game
+  | player1 game == Nothing = Just $ game {player1 = Just clientId}
+  | otherwise =
+    if player2 game == Nothing
+      then Just $ game {player2 = Just clientId}
+      else Nothing
 
 nextId :: [Client] -> ClientId
 nextId clients =
@@ -90,8 +114,7 @@ connectClient conn stateRef =
   modifyMVar stateRef $ \(State clients games) -> do
     let clientId = nextId clients
     let newClient = (clientId, conn)
-    -- let newGame = Game (Just newClient) Nothing cards
-    return (State (newClient : clients) (games), clientId) {-newGame :-}
+    return (State (newClient : clients) (games), clientId)
 
 withoutClient :: ClientId -> [Client] -> [Client]
 withoutClient clientId = filter ((/= clientId) . fst)
@@ -116,16 +139,23 @@ respond clientId stateRef msg = do
     Nothing -> return "" -- TODO: send back some sort of error response
     Just decoded ->
       case decoded of
-        SocketMessage JoinedGame id -- ensure joinedGame decodes to JoinedGame!
+        JoinedGame id
         -- generate new game with a random set of cards, and assign the new
         -- client to that game
          -> do
           cards <- randomCardsIO
-          -- TODO: add cards and player to state in MVar
-          -- TODO: use a "proper" JSON representation of cards (need to change
-          -- SocketMessage type and instances)
-          return . toJSON . SocketMessage CardsForGame . fromStringLazy $
-            show cards
+          -- add cards and player to state in MVar. Much work still needed!
+          modifyMVar_ stateRef $ \state@(State clients games) ->
+            case filter ((== id) . gameId) games of
+              (game:_) ->
+                case joinGame clientId game -- TODO: move this check "further out"!
+                      of
+                  Just joinedGame -> do
+                    let withCards = joinedGame {cards = cards}
+                    return $ State clients (withCards : games)
+                  Nothing -> return state
+              [] -> return state
+          return . toJSON $ CardsForGame cards
 
 wsApp :: MVar State -> ServerApp
 wsApp stateRef pendingConn = do
