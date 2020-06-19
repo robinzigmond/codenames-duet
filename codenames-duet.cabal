@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 555f1d4f5b4a925a09b0f1c306ae7379d0d1f31300a4e9ecba542dbbf64e7ce9
+-- hash: dbbd0f9fba2fa7d8331bca845d7293700b11a5d3a5506748d7fa58751f581581
 
 name:           codenames-duet
 version:        0.1.0.0
@@ -36,7 +36,9 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , http-types
+    , pandoc
     , random
     , split
     , text
@@ -57,8 +59,10 @@ executable codenames-duet-exe
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , codenames-duet
     , http-types
+    , pandoc
     , random
     , split
     , text
@@ -80,8 +84,10 @@ test-suite codenames-duet-test
   build-depends:
       aeson
     , base >=4.7 && <5
+    , bytestring
     , codenames-duet
     , http-types
+    , pandoc
     , random
     , split
     , text

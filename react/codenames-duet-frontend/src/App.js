@@ -4,8 +4,9 @@ import { useLocation } from 'react-router-dom';
 
 const App = () => {
   const [cards, setCards] = useState([]);
-  const [gameId, setGameId] = useState(null);
   const location = useLocation();
+  const gameId = location.pathname.slice(1);
+
 
   const {
     sendJsonMessage,
@@ -15,15 +16,17 @@ const App = () => {
   useEffect(() => {
     if (lastJsonMessage) {
       console.log(lastJsonMessage);
-      setCards(lastJsonMessage);
+      if (lastJsonMessage.type === 'CardsForGame') {
+        setCards(JSON.parse(lastJsonMessage.message));
+      }
     }
-  }, [lastJsonMessage])
+  }, [lastJsonMessage]);
 
   useEffect(() => {
-    if (location) {
-      setGameId(location.pathname.slice(1));
+    if (gameId) {
+      sendJsonMessage({ type: 'JoinedGame', message: gameId });
     }
-  }, [location])
+  }, [gameId]);
 
   return (
     <React.Fragment>
@@ -43,7 +46,7 @@ const App = () => {
           : 'No game started!'}
       </div>
     </React.Fragment>
-  )
+  );
 };
 
 export default App;
