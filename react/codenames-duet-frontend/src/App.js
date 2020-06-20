@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 
 const App = () => {
   const [cards, setCards] = useState([]);
+  const [error, setError] = useState('');
   const location = useLocation();
+  const history = useHistory();
   const gameId = location.pathname.slice(1);
-
 
   const {
     sendJsonMessage,
@@ -16,8 +17,21 @@ const App = () => {
   useEffect(() => {
     if (lastJsonMessage) {
       console.log(lastJsonMessage);
-      if (lastJsonMessage.type === 'CardsForGame') {
-        setCards(lastJsonMessage.message);
+      const { type, message } = lastJsonMessage;
+      switch (type) {
+        case 'CardsForGame':
+          setCards(message);
+          break;
+        case 'GameStarted':
+          const [id, newCards] = message;
+          setCards(newCards);
+          history.push(`/${id}`);
+          break;
+        case 'CantJoin':
+          setError(message);
+          break;
+        default:
+          break;
       }
     }
   }, [lastJsonMessage]);
@@ -28,10 +42,15 @@ const App = () => {
     }
   }, [gameId]);
 
+  const onNewGame = () => {
+    sendJsonMessage({ type: 'NewGame' });
+  };
+
   return (
     <React.Fragment>
       <h1>Codenames duet game!</h1>
       <div>
+        <p>{error}</p>
         {gameId ?
           <React.Fragment>
             <p>Game id {gameId}</p>
@@ -43,7 +62,9 @@ const App = () => {
               </div>
             ))}
           </React.Fragment>
-          : 'No game started!'}
+          : <button onClick={onNewGame}>
+            New Game
+            </button>}
       </div>
     </React.Fragment>
   );

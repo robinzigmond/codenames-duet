@@ -3,6 +3,7 @@
 module GamePlay
   ( Card
   , randomCardsIO
+  , takeUniques
   ) where
 
 import           Data.List.Split (chunksOf)

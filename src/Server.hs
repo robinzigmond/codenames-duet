@@ -13,12 +13,15 @@ import           Control.Exception              (finally)
 import           Control.Monad                  (forM_, forever)
 import           Data.Aeson                     (FromJSON (..), Options,
                                                  SumEncoding (TaggedObject),
-                                                 ToJSON (..), Value (Object),
+                                                 ToJSON (..),
+                                                 Value (Number, Object, String),
                                                  decode, defaultOptions, encode,
                                                  genericParseJSON,
                                                  genericToJSON, sumEncoding,
                                                  tagSingleConstructors)
 import           Data.ByteString.Lazy           (ByteString)
+import           Data.Char                      (isDigit)
+import qualified Data.Text                      as T (pack, span, unpack)
 import           GHC.Generics                   (Generic)
 import           Network.HTTP.Types             (status400)
 import           Network.Wai                    (Application, responseLBS)
@@ -28,11 +31,13 @@ import           Network.Wai.Application.Static (defaultWebAppSettings,
 import           Network.WebSockets             (Connection, ServerApp,
                                                  acceptRequest, forkPingThread,
                                                  receiveData, sendTextData)
+import           System.Random                  (getStdGen, randomRs)
 import           Text.Pandoc.UTF8               (fromStringLazy, fromTextLazy,
-                                                 toTextLazy)
+                                                 toStringLazy, toTextLazy)
 import           WaiAppStatic.Types             (unsafeToPiece)
 
-import           GamePlay                       (Card, randomCardsIO)
+import           GamePlay                       (Card, randomCardsIO,
+                                                 takeUniques)
 
 httpApp :: Application
 httpApp =
@@ -57,7 +62,12 @@ type ClientId = Int
 
 type Client = (ClientId, Connection)
 
-type GameId = ByteString
+data GameId =
+  GameId
+    { num  :: Integer
+    , rand :: ByteString
+    }
+  deriving (Eq, Show)
 
 data Game =
   Game
@@ -70,9 +80,10 @@ data Game =
 data State =
   State [Client] [Game]
 
-data MessageIn =
-  JoinedGame GameId
-  deriving (Eq, Generic)
+data MessageIn
+  = NewGame
+  | JoinedGame GameId
+  deriving (Eq, Show, Generic)
 
 customOptions :: Options
 customOptions =
@@ -85,12 +96,24 @@ instance FromJSON ByteString where
 instance ToJSON ByteString where
   toJSON = toJSON . toTextLazy
 
+instance FromJSON GameId where
+  parseJSON (String s) =
+    let (numString, rand) = T.span isDigit s
+     in GameId <$> parseJSON (Number . fromInteger . read $ T.unpack numString) <*>
+        parseJSON (String rand)
+
 instance FromJSON MessageIn where
   parseJSON = genericParseJSON customOptions
 
-data MessageOut =
-  CardsForGame [[Card]]
+data MessageOut
+  = Error ByteString
+  | CardsForGame [[Card]]
+  | GameStarted GameId [[Card]]
+  | CantJoin ByteString
   deriving (Eq, Generic)
+
+instance ToJSON GameId where
+  toJSON (GameId num rand) = String . T.pack $ show num ++ toStringLazy rand
 
 instance ToJSON MessageOut where
   toJSON = genericToJSON customOptions
@@ -124,6 +147,29 @@ disconnectClient clientId stateRef =
   modifyMVar_ stateRef $ \(State clients games) ->
     return $ State (withoutClient clientId clients) games
 
+-- create new game (when appropriate socket message received)
+-- need to generate random (unique) ID as well as random cards, and
+-- add the connecting client to it as player1.
+-- How to generate IDs? perhaps concatenate a number that strictly increases
+-- with a randomly generated string?
+newGameId :: [GameId] -> IO GameId
+newGameId currentIds = do
+  let integerPart =
+        case currentIds of
+          [] -> 1
+          _  -> maximum (map num currentIds) + 1
+  gen <- getStdGen
+  let randomPart = fromStringLazy . takeUniques 8 $ randomRs ('a', 'z') gen
+  return $ GameId integerPart randomPart
+
+makeNewGame :: MVar State -> IO (GameId, [[Card]])
+makeNewGame stateRef =
+  modifyMVar stateRef $ \(State clients games) -> do
+    newId <- newGameId (map gameId games)
+    cards <- randomCardsIO
+    let newGame = Game newId Nothing Nothing cards
+    return $ (State clients (newGame : games), (newId, cards))
+
 listen :: Connection -> ClientId -> MVar State -> IO ()
 listen conn clientId stateRef =
   forever $ do
@@ -136,26 +182,40 @@ respond :: ClientId -> MVar State -> ByteString -> IO Value
 respond clientId stateRef msg = do
   State clients _ <- readMVar stateRef
   case (decode msg) of
-    Nothing -> return "" -- TODO: send back some sort of error response
+    Nothing -> do
+      print msg
+      return . toJSON $ Error "unrecognised message!"
     Just decoded ->
       case decoded of
-        JoinedGame id
-        -- generate new game with a random set of cards, and assign the new
-        -- client to that game
+        NewGame
+          -- generate new game with a random set of cards, and assign the new
+          -- client to that game
          -> do
-          cards <- randomCardsIO
-          -- add cards and player to state in MVar. Much work still needed!
-          modifyMVar_ stateRef $ \state@(State clients games) ->
-            case filter ((== id) . gameId) games of
-              (game:_) ->
-                case joinGame clientId game -- TODO: move this check "further out"!
-                      of
-                  Just joinedGame -> do
-                    let withCards = joinedGame {cards = cards}
-                    return $ State clients (withCards : games)
-                  Nothing -> return state
-              [] -> return state
-          return . toJSON $ CardsForGame cards
+          (newId, newCards) <- makeNewGame stateRef
+          return . toJSON $ GameStarted newId newCards
+        JoinedGame id
+          -- add cards and player to gamestate in MVar
+         -> do
+          message <-
+            modifyMVar stateRef $ \state@(State clients games) ->
+              case filter ((== id) . gameId) games of
+                (game:_) ->
+                  case joinGame clientId game of
+                    Just joinedGame -> do
+                      let withJoined =
+                            map
+                              (\g ->
+                                 if gameId g == id
+                                   then joinedGame
+                                   else g)
+                              games
+                      return $
+                        (State clients withJoined, CardsForGame $ cards game)
+                    Nothing ->
+                      return
+                        (state, CantJoin "This game already has 2 players.")
+                [] -> return (state, CantJoin "This game does not exist.")
+          return . toJSON $ message
 
 wsApp :: MVar State -> ServerApp
 wsApp stateRef pendingConn = do
