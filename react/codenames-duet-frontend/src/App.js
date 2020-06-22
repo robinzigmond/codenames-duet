@@ -57,7 +57,7 @@ const App = () => {
             {cards.map(row => (
               <div>
                 {row.map(card => (
-                  <div style={{ display: 'inline-block', margin: '10px', width: '50px', height: '20px' }}>{card}</div>
+                  <div style={{ display: 'inline-block', margin: '10px', width: '150px', height: '50px' }}>{card}</div>
                 ))}
               </div>
             ))}
