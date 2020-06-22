@@ -1,6 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
 import { useHistory, useLocation } from 'react-router-dom';
+import styled from 'styled-components';
+
+import Game from './components/Game';
+
+const StyledApp = styled.div`
+  & {
+    max-width: 1000px;
+    margin: 50px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    h1 {
+      text-align: center;
+    }
+  }
+`;
 
 const App = () => {
   const [cards, setCards] = useState([]);
@@ -47,26 +64,17 @@ const App = () => {
   };
 
   return (
-    <React.Fragment>
-      <h1>Codenames duet game!</h1>
+    <StyledApp>
+      <h1>Codenames Duet</h1>
       <div>
         <p>{error}</p>
         {gameId ?
-          <React.Fragment>
-            <p>Game id {gameId}</p>
-            {cards.map(row => (
-              <div>
-                {row.map(card => (
-                  <div style={{ display: 'inline-block', margin: '10px', width: '150px', height: '50px' }}>{card}</div>
-                ))}
-              </div>
-            ))}
-          </React.Fragment>
+          <Game cards={cards} />
           : <button onClick={onNewGame}>
             New Game
             </button>}
       </div>
-    </React.Fragment>
+    </StyledApp>
   );
 };
 
