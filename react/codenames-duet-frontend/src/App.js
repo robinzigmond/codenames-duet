@@ -16,6 +16,16 @@ const StyledApp = styled.div`
     h1 {
       text-align: center;
     }
+
+    button {
+      width: 180px;
+      height: 65px;
+      background-color: #ccb43b;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2a2952;
+      cursor: pointer;
+    }
   }
 `;
 
@@ -71,7 +81,7 @@ const App = () => {
         {gameId ?
           <Game cards={cards} />
           : <button onClick={onNewGame}>
-            New Game
+            NEW GAME
             </button>}
       </div>
     </StyledApp>
