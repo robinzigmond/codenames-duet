@@ -31,6 +31,7 @@ const StyledApp = styled.div`
 
 const App = () => {
   const [cards, setCards] = useState([]);
+  const [key, setKey] = useState([]);
   const [error, setError] = useState('');
   const location = useLocation();
   const history = useHistory();
@@ -47,12 +48,13 @@ const App = () => {
       const { type, message } = lastJsonMessage;
       switch (type) {
         case 'CardsForGame':
-          setCards(message);
+          const [cards, keyCard] = message;
+          setCards(cards);
+          setKey(keyCard);
           break;
         case 'GameStarted':
-          const [id, newCards] = message;
-          setCards(newCards);
-          history.push(`/${id}`);
+          const gameId = message;
+          history.push(`/${gameId}`);
           break;
         case 'CantJoin':
           setError(message);
@@ -73,13 +75,21 @@ const App = () => {
     sendJsonMessage({ type: 'NewGame' });
   };
 
+  const cardState = cards.length
+    ? [0, 1, 2, 3, 4].map(row =>
+      [0, 1, 2, 3, 4].map(col =>
+        ({ word: cards[row][col], type: key[row][col] })
+      )
+    )
+    : [];
+
   return (
     <StyledApp>
       <h1>Codenames Duet</h1>
       <div>
         <p>{error}</p>
         {gameId ?
-          <Game cards={cards} />
+          <Game cardState={cardState} />
           : <button onClick={onNewGame}>
             NEW GAME
             </button>}

@@ -9,16 +9,17 @@ const CardStyle = styled.div`
         margin: 10px;
         width: 150px;
         height: 65px;
-        background-color: #ccb43b;
+        background-color: ${props => props.type === 'agent' ? '#23f018' :
+        props.type === 'assassin' ? '#0a0a0a' : '#ccb43b'};
         font-size: 18px;
         font-weight: bold;
-        color: #2a2952;
+        color: ${props => props.type === 'assassin' ? '#f5f0f0' : '#2a2952'};
         letter-spacing: 0.5px;
     }
 `;
 
 const Card = (props) => (
-    <CardStyle>
+    <CardStyle type={props.type}>
         <p>{props.cardText}</p>
     </CardStyle>
 );

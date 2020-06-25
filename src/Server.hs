@@ -36,8 +36,9 @@ import           Text.Pandoc.UTF8               (fromStringLazy, fromTextLazy,
                                                  toStringLazy, toTextLazy)
 import           WaiAppStatic.Types             (unsafeToPiece)
 
-import           GamePlay                       (Card, randomCardsIO,
-                                                 takeUniques)
+import           GamePlay                       (Card, KeyCard (..),
+                                                 KeyCardSide, randomCardsIO,
+                                                 randomKeyCardIO, takeUniques)
 
 httpApp :: Application
 httpApp =
@@ -75,6 +76,7 @@ data Game =
     , player1 :: Maybe ClientId
     , player2 :: Maybe ClientId
     , cards   :: [[Card]]
+    , keyCard :: KeyCard
     }
 
 data State =
@@ -107,10 +109,10 @@ instance FromJSON MessageIn where
 
 data MessageOut
   = Error ByteString
-  | CardsForGame [[Card]]
-  | GameStarted GameId [[Card]]
+  | CardsForGame [[Card]] KeyCardSide
+  | GameStarted GameId
   | CantJoin ByteString
-  deriving (Eq, Generic)
+  deriving (Generic)
 
 instance ToJSON GameId where
   toJSON (GameId num rand) = String . T.pack $ show num ++ toStringLazy rand
@@ -162,13 +164,14 @@ newGameId currentIds = do
   let randomPart = fromStringLazy . takeUniques 8 $ randomRs ('a', 'z') gen
   return $ GameId integerPart randomPart
 
-makeNewGame :: MVar State -> IO (GameId, [[Card]])
+makeNewGame :: MVar State -> IO GameId
 makeNewGame stateRef =
   modifyMVar stateRef $ \(State clients games) -> do
     newId <- newGameId (map gameId games)
     cards <- randomCardsIO
-    let newGame = Game newId Nothing Nothing cards
-    return $ (State clients (newGame : games), (newId, cards))
+    keyCard <- randomKeyCardIO
+    let newGame = Game newId Nothing Nothing cards keyCard
+    return $ (State clients (newGame : games), newId)
 
 listen :: Connection -> ClientId -> MVar State -> IO ()
 listen conn clientId stateRef =
@@ -191,8 +194,8 @@ respond clientId stateRef msg = do
           -- generate new game with a random set of cards, and assign the new
           -- client to that game
          -> do
-          (newId, newCards) <- makeNewGame stateRef
-          return . toJSON $ GameStarted newId newCards
+          newId <- makeNewGame stateRef
+          return . toJSON $ GameStarted newId
         JoinedGame id
           -- add cards and player to gamestate in MVar
          -> do
@@ -209,8 +212,13 @@ respond clientId stateRef msg = do
                                    then joinedGame
                                    else g)
                               games
+                      let correctSide =
+                            case player2 joinedGame of
+                              Just _  -> side2
+                              Nothing -> side1
                       return $
-                        (State clients withJoined, CardsForGame $ cards game)
+                        ( State clients withJoined
+                        , CardsForGame (cards game) (correctSide $ keyCard game))
                     Nothing ->
                       return
                         (state, CantJoin "This game already has 2 players.")

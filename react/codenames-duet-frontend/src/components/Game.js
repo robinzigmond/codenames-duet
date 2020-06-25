@@ -3,10 +3,10 @@ import React from 'react';
 import Card from './Card';
 
 const Game = (props) => (
-    props.cards.map(row => (
+    props.cardState.map(row => (
         <div>
-            {row.map(cardText => (
-                <Card cardText={cardText} />
+            {row.map(({ word, type }) => (
+                <Card cardText={word} type={type.toLowerCase()} />
             ))}
         </div>
     ))
