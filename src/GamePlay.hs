@@ -1,22 +1,17 @@
 module GamePlay
-  ( Card
-  , KeyCard(..)
-  , KeyCardSide
-  , randomCardsIO
+  ( randomCardsIO
   , randomKeyCardIO
   , takeUniques
   ) where
 
+import           Data.Function   (on)
 import           Data.List.Split (chunksOf)
 import           Data.Text       (Text)
 import           System.Random   (RandomGen, getStdGen, randomIO, randomR,
                                   randomRs)
 
-import           Data            (KeyCard(..), KeyCardSide, allCards, allKeyCards)
-
-type Card = Text
-
-type Grid = [[Card]]
+import           Data            (allCards, allKeyCards)
+import           GameTypes
 
 randomCards :: RandomGen g => g -> [[Card]]
 randomCards gen =
@@ -44,4 +39,15 @@ randomKeycard gen =
    in allKeyCards !! rand
 
 randomKeyCardIO :: IO KeyCard
-randomKeyCardIO = getStdGen >>= return . randomKeycard
+-- not only choose a random keycard, but rotate it at random
+randomKeyCardIO = do
+  g <- getStdGen
+  rotateOrNot <- randomIO
+  let rotateFunc =
+        if rotateOrNot
+          then rotateCard
+          else id
+  return . rotateFunc $ randomKeycard g
+
+rotateCard :: KeyCard -> KeyCard
+rotateCard (KeyCard side1 side2) = (KeyCard `on` rotateSide) side1 side2

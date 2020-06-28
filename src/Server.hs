@@ -36,9 +36,9 @@ import           Text.Pandoc.UTF8               (fromStringLazy, fromTextLazy,
                                                  toStringLazy, toTextLazy)
 import           WaiAppStatic.Types             (unsafeToPiece)
 
-import           GamePlay                       (Card, KeyCard (..),
-                                                 KeyCardSide, randomCardsIO,
+import           GamePlay                       (randomCardsIO,
                                                  randomKeyCardIO, takeUniques)
+import           GameTypes
 
 httpApp :: Application
 httpApp =

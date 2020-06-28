@@ -1,53 +1,16 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data
-  ( KeyCard(..)
-  , KeyCardSide
-  , allCards
+  ( allCards
   , allKeyCards
   ) where
 
-import           Data.Aeson   (ToJSON (..))
-import           Data.Text    (Text)
-import           GHC.Generics (Generic)
-
-data CardType
-  = Agent
-  | Assassin
-  | Bystander
-  deriving (Generic)
-
-instance ToJSON CardType
-
-data KeyCardSide =
-  KeyCardSide [[CardType]]
-
-instance ToJSON KeyCardSide where
-  toJSON (KeyCardSide types) = toJSON types
-
-data KeyCard =
-  KeyCard
-    { side1 :: KeyCardSide
-    , side2 :: KeyCardSide
-    }
-
--- "smart" constructor
-keyCard :: [(Int, Int)] -> [(Int, Int)] -> KeyCardSide
-keyCard agents assassins =
-  KeyCardSide $
-  flip map [1 .. 5] $ \row ->
-    flip map [1 .. 5] $ \col ->
-      if (row, col) `elem` agents
-        then Agent
-        else if (row, col) `elem` assassins
-               then Assassin
-               else Bystander
+import           GameTypes
 
 allKeyCards :: [KeyCard]
 allKeyCards =
   [ KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 1)
          , (2, 3)
          , (2, 5)
@@ -59,7 +22,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 5), (3, 3), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 4)
@@ -72,7 +35,7 @@ allKeyCards =
          ]
          [(1, 3), (3, 4), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 1)
@@ -84,7 +47,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 2), (3, 5), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 5)
@@ -97,7 +60,7 @@ allKeyCards =
          ]
          [(3, 5), (4, 2), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 4)
@@ -109,7 +72,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 1), (2, 4), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 1)
@@ -122,7 +85,7 @@ allKeyCards =
          ]
          [(1, 2), (2, 4), (4, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 3)
          , (2, 5)
@@ -134,7 +97,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(2, 4), (3, 1), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (2, 3)
          , (3, 4)
@@ -147,7 +110,7 @@ allKeyCards =
          ]
          [(1, 2), (3, 1), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 5)
@@ -159,7 +122,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 3), (5, 1), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 3)
@@ -172,7 +135,7 @@ allKeyCards =
          ]
          [(1, 4), (3, 2), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 2)
@@ -184,7 +147,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 2), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (2, 1)
          , (3, 1)
@@ -197,7 +160,7 @@ allKeyCards =
          ]
          [(1, 1), (4, 2), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (3, 3)
@@ -209,7 +172,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 3), (4, 4), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 1)
@@ -222,7 +185,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 3), (3, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (1, 5)
@@ -234,7 +197,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 2), (2, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 1)
@@ -247,7 +210,7 @@ allKeyCards =
          ]
          [(1, 3), (4, 2), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 3)
          , (3, 1)
@@ -259,7 +222,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 2), (4, 1), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 2)
@@ -272,7 +235,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 3), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 1)
@@ -284,7 +247,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (3, 3), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 5)
@@ -297,7 +260,7 @@ allKeyCards =
          ]
          [(2, 4), (4, 5), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -309,7 +272,7 @@ allKeyCards =
          , (5, 2)
          ]
          [(2, 3), (3, 5), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (1, 5)
@@ -322,7 +285,7 @@ allKeyCards =
          ]
          [(3, 2), (5, 1), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 1)
@@ -334,7 +297,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(1, 2), (3, 4), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 1)
          , (2, 3)
@@ -347,7 +310,7 @@ allKeyCards =
          ]
          [(1, 5), (3, 4), (4, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (1, 5)
@@ -359,7 +322,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(2, 5), (3, 1), (4, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 1)
@@ -372,7 +335,7 @@ allKeyCards =
          ]
          [(1, 3), (4, 4), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 1)
          , (2, 3)
          , (2, 4)
@@ -384,7 +347,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(1, 2), (1, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 4)
@@ -397,7 +360,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 3), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 1)
          , (2, 2)
@@ -409,7 +372,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 3), (3, 1), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 1)
@@ -422,7 +385,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 2), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 1)
@@ -434,7 +397,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 2), (3, 3), (4, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (2, 3)
          , (3, 3)
@@ -447,7 +410,7 @@ allKeyCards =
          ]
          [(2, 4), (4, 1), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (2, 1)
          , (2, 2)
@@ -459,7 +422,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 5), (2, 3), (3, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 4)
@@ -472,7 +435,7 @@ allKeyCards =
          ]
          [(1, 5), (3, 2), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 1)
@@ -484,7 +447,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(1, 2), (4, 2), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 2)
          , (3, 3)
@@ -497,7 +460,7 @@ allKeyCards =
          ]
          [(2, 3), (4, 1), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 3)
@@ -509,7 +472,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 3), (4, 1), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 2)
          , (2, 4)
@@ -522,7 +485,7 @@ allKeyCards =
          ]
          [(1, 2), (4, 1), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -534,7 +497,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 3), (3, 4), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 1)
@@ -547,7 +510,7 @@ allKeyCards =
          ]
          [(2, 3), (3, 5), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 3)
          , (2, 4)
@@ -559,7 +522,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 4), (4, 2), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 4)
@@ -572,7 +535,7 @@ allKeyCards =
          ]
          [(1, 4), (3, 1), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 4)
@@ -584,7 +547,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 4), (2, 2), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 5)
@@ -597,7 +560,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 2), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 2)
@@ -609,7 +572,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(2, 5), (4, 3), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 1)
          , (2, 3)
@@ -622,7 +585,7 @@ allKeyCards =
          ]
          [(3, 4), (4, 1), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (1, 5)
@@ -634,7 +597,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 4), (3, 2), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 4)
@@ -647,7 +610,7 @@ allKeyCards =
          ]
          [(2, 3), (4, 1), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 1)
          , (2, 2)
          , (2, 4)
@@ -659,7 +622,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 5), (3, 2), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (1, 5)
@@ -672,7 +635,7 @@ allKeyCards =
          ]
          [(2, 5), (3, 1), (4, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 2)
          , (2, 3)
          , (3, 1)
@@ -684,7 +647,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 4), (4, 3), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 5)
@@ -697,7 +660,7 @@ allKeyCards =
          ]
          [(1, 4), (2, 2), (4, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 3)
@@ -709,7 +672,7 @@ allKeyCards =
          , (5, 2)
          ]
          [(1, 1), (4, 1), (4, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (2, 1)
          , (3, 3)
@@ -722,7 +685,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 3), (4, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 4)
          , (3, 5)
@@ -734,7 +697,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 1), (3, 3), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 2)
@@ -747,7 +710,7 @@ allKeyCards =
          ]
          [(2, 1), (4, 4), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 1)
          , (2, 2)
@@ -759,7 +722,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 5), (3, 2), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 2)
@@ -772,7 +735,7 @@ allKeyCards =
          ]
          [(1, 2), (1, 5), (3, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (1, 4)
@@ -784,7 +747,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 2), (3, 4), (4, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 1)
          , (2, 2)
@@ -797,7 +760,7 @@ allKeyCards =
          ]
          [(1, 3), (3, 1), (3, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 1)
          , (2, 3)
@@ -809,7 +772,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(3, 4), (4, 1), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 2)
@@ -822,7 +785,7 @@ allKeyCards =
          ]
          [(3, 3), (4, 1), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 2)
          , (2, 5)
@@ -834,7 +797,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 4), (4, 3), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 1)
@@ -847,7 +810,7 @@ allKeyCards =
          ]
          [(1, 4), (3, 2), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 1)
          , (2, 2)
@@ -859,7 +822,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 4), (4, 3), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 2)
@@ -872,7 +835,7 @@ allKeyCards =
          ]
          [(2, 1), (2, 4), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 3)
@@ -884,7 +847,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 2), (4, 2), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (1, 5)
@@ -897,7 +860,7 @@ allKeyCards =
          ]
          [(1, 2), (3, 1), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 3)
          , (2, 5)
          , (3, 4)
@@ -909,7 +872,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (3, 1), (4, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 1)
@@ -922,7 +885,7 @@ allKeyCards =
          ]
          [(2, 4), (3, 1), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 5)
          , (2, 3)
@@ -934,7 +897,7 @@ allKeyCards =
          , (5, 2)
          ]
          [(1, 4), (2, 1), (4, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 1)
@@ -947,7 +910,7 @@ allKeyCards =
          ]
          [(1, 4), (3, 2), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 3)
          , (2, 5)
@@ -959,7 +922,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 2), (3, 5), (4, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 2)
@@ -972,7 +935,7 @@ allKeyCards =
          ]
          [(1, 4), (3, 5), (4, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (1, 5)
@@ -984,7 +947,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 3), (4, 3), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 4)
@@ -997,7 +960,7 @@ allKeyCards =
          ]
          [(2, 1), (3, 3), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (3, 1)
@@ -1009,7 +972,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 5), (2, 1), (4, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 3)
@@ -1022,7 +985,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 3), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 4)
@@ -1034,7 +997,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(2, 2), (3, 5), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 4)
@@ -1047,7 +1010,7 @@ allKeyCards =
          ]
          [(1, 1), (3, 2), (3, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 1)
          , (2, 2)
@@ -1059,7 +1022,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 2), (3, 4), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 3)
          , (2, 4)
@@ -1072,7 +1035,7 @@ allKeyCards =
          ]
          [(1, 2), (3, 2), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (1, 5)
@@ -1084,7 +1047,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 1), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 3)
          , (2, 4)
@@ -1097,7 +1060,7 @@ allKeyCards =
          ]
          [(1, 3), (3, 4), (4, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 5)
          , (3, 1)
@@ -1109,7 +1072,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 2), (4, 1), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -1122,7 +1085,7 @@ allKeyCards =
          ]
          [(1, 4), (2, 2), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (2, 5)
          , (3, 1)
@@ -1134,7 +1097,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (3, 2), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (1, 4)
@@ -1147,7 +1110,7 @@ allKeyCards =
          ]
          [(2, 5), (3, 3), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 2)
@@ -1159,7 +1122,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 1), (3, 3), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 5)
@@ -1172,7 +1135,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 4), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 2)
          , (2, 5)
@@ -1184,7 +1147,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(2, 3), (3, 1), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 1)
@@ -1197,7 +1160,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 3), (4, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (2, 2)
@@ -1209,7 +1172,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(2, 3), (3, 5), (4, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 5)
@@ -1222,7 +1185,7 @@ allKeyCards =
          ]
          [(2, 2), (4, 1), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 1)
@@ -1234,7 +1197,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 2), (3, 4), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -1247,7 +1210,7 @@ allKeyCards =
          ]
          [(2, 5), (4, 2), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (2, 1)
          , (2, 2)
@@ -1259,7 +1222,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(1, 1), (2, 3), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 1)
          , (2, 3)
@@ -1272,7 +1235,7 @@ allKeyCards =
          ]
          [(1, 1), (3, 4), (4, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 5)
@@ -1284,7 +1247,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (2, 2), (3, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 5)
          , (3, 2)
@@ -1297,7 +1260,7 @@ allKeyCards =
          ]
          [(2, 2), (4, 1), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 1)
          , (2, 3)
@@ -1309,7 +1272,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 1), (3, 3), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 4)
          , (3, 1)
@@ -1322,7 +1285,7 @@ allKeyCards =
          ]
          [(1, 1), (1, 4), (3, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 1)
@@ -1334,7 +1297,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 5), (2, 2), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (2, 1)
          , (3, 1)
          , (3, 3)
@@ -1347,7 +1310,7 @@ allKeyCards =
          ]
          [(2, 2), (4, 5), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (1, 5)
@@ -1359,7 +1322,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 2), (3, 5), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 5)
@@ -1372,7 +1335,7 @@ allKeyCards =
          ]
          [(1, 4), (2, 2), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (1, 5)
@@ -1384,7 +1347,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(2, 2), (2, 5), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (2, 3)
@@ -1397,7 +1360,7 @@ allKeyCards =
          ]
          [(3, 3), (5, 1), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -1409,7 +1372,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (2, 2), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 1)
@@ -1422,7 +1385,7 @@ allKeyCards =
          ]
          [(1, 4), (3, 3), (4, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (1, 5)
@@ -1434,7 +1397,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(3, 2), (4, 5), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 3)
@@ -1447,7 +1410,7 @@ allKeyCards =
          ]
          [(2, 2), (4, 1), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 4)
@@ -1459,7 +1422,7 @@ allKeyCards =
          , (4, 4)
          ]
          [(2, 1), (2, 4), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 4)
          , (3, 1)
@@ -1472,7 +1435,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 1), (3, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 1)
@@ -1484,7 +1447,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 1), (2, 3), (3, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 1)
@@ -1497,7 +1460,7 @@ allKeyCards =
          ]
          [(1, 1), (4, 2), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (1, 5)
@@ -1509,7 +1472,7 @@ allKeyCards =
          , (5, 2)
          ]
          [(2, 5), (3, 3), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 4)
@@ -1522,7 +1485,7 @@ allKeyCards =
          ]
          [(2, 5), (4, 4), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 3)
@@ -1534,7 +1497,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (3, 2), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 1)
          , (3, 1)
@@ -1547,7 +1510,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 4), (3, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (2, 1)
@@ -1559,7 +1522,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (3, 2), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 3)
@@ -1572,7 +1535,7 @@ allKeyCards =
          ]
          [(1, 1), (3, 2), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 2)
          , (2, 4)
          , (3, 1)
@@ -1584,7 +1547,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 5), (3, 3), (4, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 4)
@@ -1597,7 +1560,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 2), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 2)
@@ -1609,7 +1572,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 1), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 4)
@@ -1622,7 +1585,7 @@ allKeyCards =
          ]
          [(3, 2), (3, 5), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 3)
@@ -1634,7 +1597,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(1, 3), (2, 5), (3, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (1, 5)
@@ -1647,7 +1610,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 5), (3, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (1, 5)
@@ -1659,7 +1622,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 2), (4, 5), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 1)
          , (2, 2)
@@ -1672,7 +1635,7 @@ allKeyCards =
          ]
          [(2, 5), (3, 2), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 2)
@@ -1684,7 +1647,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 1), (2, 4), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 4)
@@ -1697,7 +1660,7 @@ allKeyCards =
          ]
          [(1, 1), (3, 3), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 1)
          , (2, 4)
@@ -1709,7 +1672,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 2), (4, 2), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 5)
@@ -1722,7 +1685,7 @@ allKeyCards =
          ]
          [(2, 3), (4, 1), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 2)
@@ -1734,7 +1697,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (4, 2), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 4)
@@ -1747,7 +1710,7 @@ allKeyCards =
          ]
          [(1, 4), (3, 3), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -1759,7 +1722,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(1, 4), (3, 5), (4, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 1)
@@ -1772,7 +1735,7 @@ allKeyCards =
          ]
          [(1, 2), (4, 3), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 1)
          , (2, 3)
@@ -1784,7 +1747,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(3, 4), (4, 2), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 5)
          , (3, 2)
@@ -1797,7 +1760,7 @@ allKeyCards =
          ]
          [(1, 2), (3, 4), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 5)
@@ -1809,7 +1772,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (4, 3), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 5)
          , (2, 1)
@@ -1822,7 +1785,7 @@ allKeyCards =
          ]
          [(1, 3), (3, 4), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 5)
@@ -1834,7 +1797,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 5), (3, 4), (4, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 1)
          , (3, 3)
@@ -1847,7 +1810,7 @@ allKeyCards =
          ]
          [(1, 2), (3, 1), (3, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 3)
@@ -1859,7 +1822,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 5), (2, 3), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 2)
          , (2, 3)
@@ -1872,7 +1835,7 @@ allKeyCards =
          ]
          [(1, 3), (3, 2), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 4)
          , (2, 5)
          , (3, 1)
@@ -1884,7 +1847,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (3, 3), (4, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 5)
          , (2, 1)
@@ -1897,7 +1860,7 @@ allKeyCards =
          ]
          [(2, 4), (4, 1), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 3)
          , (3, 4)
@@ -1909,7 +1872,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 3), (4, 3), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 1)
          , (2, 2)
@@ -1922,7 +1885,7 @@ allKeyCards =
          ]
          [(1, 3), (3, 1), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 5)
@@ -1934,7 +1897,7 @@ allKeyCards =
          , (5, 1)
          ]
          [(3, 4), (5, 2), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 4)
@@ -1947,7 +1910,7 @@ allKeyCards =
          ]
          [(1, 5), (3, 4), (4, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (1, 5)
@@ -1959,7 +1922,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 1), (3, 4), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (1, 5)
@@ -1972,7 +1935,7 @@ allKeyCards =
          ]
          [(1, 2), (3, 4), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 4)
          , (2, 3)
@@ -1984,7 +1947,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 1), (3, 4), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (2, 4)
@@ -1997,7 +1960,7 @@ allKeyCards =
          ]
          [(2, 2), (3, 4), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 1)
          , (2, 4)
          , (3, 2)
@@ -2009,7 +1972,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 5), (3, 1), (4, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 2)
@@ -2022,7 +1985,7 @@ allKeyCards =
          ]
          [(2, 1), (2, 5), (4, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (1, 4)
@@ -2034,7 +1997,7 @@ allKeyCards =
          , (4, 4)
          ]
          [(1, 2), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 2)
          , (2, 4)
@@ -2047,7 +2010,7 @@ allKeyCards =
          ]
          [(1, 3), (2, 1), (4, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (1, 5)
@@ -2059,7 +2022,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 3), (4, 2), (5, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 1)
@@ -2072,7 +2035,7 @@ allKeyCards =
          ]
          [(1, 4), (4, 2), (4, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 5)
@@ -2084,7 +2047,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (2, 1), (4, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 5)
          , (2, 1)
          , (2, 3)
@@ -2097,7 +2060,7 @@ allKeyCards =
          ]
          [(2, 2), (4, 3), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (2, 1)
          , (2, 3)
          , (2, 4)
@@ -2109,7 +2072,7 @@ allKeyCards =
          , (4, 3)
          ]
          [(1, 2), (3, 3), (5, 2)])
-      (keyCard
+      (makeKeyCard
          [ (2, 2)
          , (3, 1)
          , (3, 2)
@@ -2122,7 +2085,7 @@ allKeyCards =
          ]
          [(1, 2), (2, 5), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 2)
          , (2, 4)
@@ -2134,7 +2097,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (2, 1), (4, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (3, 1)
@@ -2147,7 +2110,7 @@ allKeyCards =
          ]
          [(2, 1), (3, 3), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (2, 1)
@@ -2159,7 +2122,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 2), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (2, 2)
          , (2, 4)
          , (3, 4)
@@ -2172,7 +2135,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 3), (4, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 5)
          , (3, 3)
@@ -2184,7 +2147,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (3, 1), (3, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -2197,7 +2160,7 @@ allKeyCards =
          ]
          [(1, 3), (4, 4), (5, 2)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 2)
          , (2, 3)
@@ -2209,7 +2172,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (3, 3), (5, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 4)
@@ -2222,7 +2185,7 @@ allKeyCards =
          ]
          [(2, 5), (4, 3), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 2)
@@ -2234,7 +2197,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (2, 1), (3, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 3)
@@ -2247,7 +2210,7 @@ allKeyCards =
          ]
          [(2, 1), (3, 4), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 3)
          , (2, 5)
@@ -2259,7 +2222,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(2, 2), (4, 1), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (2, 1)
@@ -2272,7 +2235,7 @@ allKeyCards =
          ]
          [(2, 2), (3, 4), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 4)
          , (1, 5)
@@ -2284,7 +2247,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 1), (4, 2), (4, 5)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 1)
@@ -2297,7 +2260,7 @@ allKeyCards =
          ]
          [(1, 4), (4, 2), (5, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (2, 3)
          , (2, 4)
@@ -2309,7 +2272,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 4), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 4)
@@ -2322,7 +2285,7 @@ allKeyCards =
          ]
          [(1, 3), (4, 2), (5, 5)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (2, 1)
          , (2, 5)
@@ -2334,7 +2297,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(2, 3), (4, 5), (5, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 5)
@@ -2347,7 +2310,7 @@ allKeyCards =
          ]
          [(3, 3), (4, 5), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 3)
          , (1, 4)
@@ -2359,7 +2322,7 @@ allKeyCards =
          , (5, 4)
          ]
          [(1, 1), (2, 5), (4, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 3)
          , (2, 3)
@@ -2372,7 +2335,7 @@ allKeyCards =
          ]
          [(2, 1), (2, 5), (3, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -2384,7 +2347,7 @@ allKeyCards =
          , (4, 5)
          ]
          [(1, 3), (3, 5), (4, 3)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 1)
          , (2, 3)
@@ -2397,7 +2360,7 @@ allKeyCards =
          ]
          [(2, 2), (3, 5), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -2409,7 +2372,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (3, 1), (4, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 3)
@@ -2422,7 +2385,7 @@ allKeyCards =
          ]
          [(1, 1), (2, 5), (4, 4)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 5)
          , (2, 1)
@@ -2434,7 +2397,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 2), (3, 4), (4, 1)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 5)
@@ -2447,7 +2410,7 @@ allKeyCards =
          ]
          [(2, 1), (3, 4), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 5)
@@ -2459,7 +2422,7 @@ allKeyCards =
          , (5, 5)
          ]
          [(1, 3), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 4)
@@ -2472,7 +2435,7 @@ allKeyCards =
          ]
          [(3, 5), (4, 3), (5, 1)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (2, 2)
          , (2, 4)
@@ -2484,7 +2447,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(1, 5), (2, 3), (4, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (1, 4)
@@ -2497,7 +2460,7 @@ allKeyCards =
          ]
          [(2, 3), (3, 1), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 1)
          , (1, 2)
          , (2, 2)
@@ -2509,7 +2472,7 @@ allKeyCards =
          , (5, 3)
          ]
          [(2, 3), (3, 1), (5, 4)])
-      (keyCard
+      (makeKeyCard
          [ (1, 2)
          , (1, 4)
          , (2, 2)
@@ -2522,7 +2485,7 @@ allKeyCards =
          ]
          [(1, 5), (2, 3), (5, 3)])
   , KeyCard
-      (keyCard
+      (makeKeyCard
          [ (1, 3)
          , (1, 5)
          , (2, 2)
@@ -2534,7 +2497,7 @@ allKeyCards =
          , (4, 5)
          ]
          [(2, 1), (3, 5), (4, 2)])
-      (keyCard
+      (makeKeyCard
          [ (1, 4)
          , (1, 5)
          , (2, 1)
@@ -2548,7 +2511,7 @@ allKeyCards =
          [(2, 2), (3, 5), (5, 2)])
   ]
 
-allCards :: [Text]
+allCards :: [Card]
 allCards =
   [ "ACE"
   , "ALASKA"

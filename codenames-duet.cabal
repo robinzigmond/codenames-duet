@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bce5d8774c635d42e8e9c91174dd86fb8a2a334bf61e20dcb77fb1cafd2f774a
+-- hash: 093dd491fe5360ded59b5a5a03084b9571fe2c4b1f6a64297b837cb8c24403b1
 
 name:           codenames-duet
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       Data
       GamePlay
+      GameTypes
       Server
   other-modules:
       Paths_codenames_duet
