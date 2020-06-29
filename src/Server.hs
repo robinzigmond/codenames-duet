@@ -36,8 +36,8 @@ import           Text.Pandoc.UTF8               (fromStringLazy, fromTextLazy,
                                                  toStringLazy, toTextLazy)
 import           WaiAppStatic.Types             (unsafeToPiece)
 
-import           GamePlay                       (randomCardsIO,
-                                                 randomKeyCardIO, takeUniques)
+import           GamePlay                       (randomCardsIO, randomKeyCardIO,
+                                                 takeUniques)
 import           GameTypes
 
 httpApp :: Application
@@ -70,13 +70,19 @@ data GameId =
     }
   deriving (Eq, Show)
 
+data CurrentPlayer
+  = Player1
+  | Player2
+  | Neither
+
 data Game =
   Game
-    { gameId  :: GameId
-    , player1 :: Maybe ClientId
-    , player2 :: Maybe ClientId
-    , cards   :: [[Card]]
-    , keyCard :: KeyCard
+    { gameId        :: GameId
+    , player1       :: Maybe ClientId
+    , player2       :: Maybe ClientId
+    , cards         :: [[Card]]
+    , keyCard       :: KeyCard
+    , currentPlayer :: CurrentPlayer
     }
 
 data State =
@@ -109,7 +115,7 @@ instance FromJSON MessageIn where
 
 data MessageOut
   = Error ByteString
-  | CardsForGame [[Card]] KeyCardSide
+  | CardsForGame Int [[Card]] KeyCardSide
   | GameStarted GameId
   | CantJoin ByteString
   deriving (Generic)
@@ -170,7 +176,7 @@ makeNewGame stateRef =
     newId <- newGameId (map gameId games)
     cards <- randomCardsIO
     keyCard <- randomKeyCardIO
-    let newGame = Game newId Nothing Nothing cards keyCard
+    let newGame = Game newId Nothing Nothing cards keyCard Neither
     return $ (State clients (newGame : games), newId)
 
 listen :: Connection -> ClientId -> MVar State -> IO ()
@@ -212,13 +218,13 @@ respond clientId stateRef msg = do
                                    then joinedGame
                                    else g)
                               games
-                      let correctSide =
+                      let (myPlayerNum, correctSide) =
                             case player2 joinedGame of
-                              Just _  -> side2
-                              Nothing -> side1
+                              Just _  -> (2, side2)
+                              Nothing -> (1, side1)
                       return $
                         ( State clients withJoined
-                        , CardsForGame (cards game) (correctSide $ keyCard game))
+                        , CardsForGame myPlayerNum (cards game) (correctSide $ keyCard game))
                     Nothing ->
                       return
                         (state, CantJoin "This game already has 2 players.")

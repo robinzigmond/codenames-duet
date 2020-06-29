@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import useWebSocket from 'react-use-websocket';
+import useMessageInput from './hooks/useMessageInput';
 import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -33,22 +33,19 @@ const App = () => {
   const [cards, setCards] = useState([]);
   const [key, setKey] = useState([]);
   const [error, setError] = useState('');
+  const [playerNum, setPlayerNum] = useState(null);
   const location = useLocation();
   const history = useHistory();
   const gameId = location.pathname.slice(1);
 
-  const {
-    sendJsonMessage,
-    lastJsonMessage
-  } = useWebSocket('ws://localhost:3000');
-
-  useEffect(() => {
-    if (lastJsonMessage) {
-      console.log(lastJsonMessage);
-      const { type, message } = lastJsonMessage;
+  const sendMessage = useMessageInput((received) => {
+    if (received) {
+      console.log(received);
+      const { type, message } = received;
       switch (type) {
         case 'CardsForGame':
-          const [cards, keyCard] = message;
+          const [myPlayerNum, cards, keyCard] = message;
+          setPlayerNum(myPlayerNum);
           setCards(cards);
           setKey(keyCard);
           break;
@@ -63,16 +60,16 @@ const App = () => {
           break;
       }
     }
-  }, [lastJsonMessage]);
+  });
 
   useEffect(() => {
     if (gameId) {
-      sendJsonMessage({ type: 'JoinedGame', message: gameId });
+      sendMessage({ type: 'JoinedGame', message: gameId });
     }
   }, [gameId]);
 
   const onNewGame = () => {
-    sendJsonMessage({ type: 'NewGame' });
+    sendMessage({ type: 'NewGame' });
   };
 
   const cardState = cards.length
@@ -87,11 +84,12 @@ const App = () => {
     <StyledApp>
       <h1>Codenames Duet</h1>
       <div>
-        <p>{error}</p>
-        {gameId ?
-          <Game cardState={cardState} />
-          : <button onClick={onNewGame}>
-            NEW GAME
+        {error ?
+          (<p>{error}</p>)
+          : gameId ?
+            <Game cardState={cardState} playerNum={playerNum} />
+            : <button onClick={onNewGame}>
+              NEW GAME
             </button>}
       </div>
     </StyledApp>
