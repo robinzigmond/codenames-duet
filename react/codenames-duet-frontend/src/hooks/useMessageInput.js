@@ -5,7 +5,7 @@ const useMessageInput = (responseFunction) => {
   const {
     sendJsonMessage,
     lastJsonMessage
-  } = useWebSocket('ws://localhost:3000');
+  } = useWebSocket('ws://localhost:3000', { share: true });
 
   useEffect(() => {
     responseFunction(lastJsonMessage);

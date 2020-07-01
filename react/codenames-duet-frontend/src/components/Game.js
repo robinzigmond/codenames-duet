@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import useMessageInput from '../hooks/useMessageInput';
 
 import Card from './Card';
@@ -6,13 +6,17 @@ import ClueInput from './ClueInput';
 
 const Game = (props) => {
   const [inputShown, setInputShown] = useState(true);
+  const [clueGiven, setClueGiven] = useState(null);
 
-  const sendMessage = useMessageInput((received) => {
+  useMessageInput((received) => {
     if (received) {
       console.log(received);
       const { type, message } = received;
       switch (type) {
-
+        case 'ClueReceived':
+          setInputShown(false);
+          setClueGiven(message);
+          break;
         default:
           break;
       }
@@ -24,8 +28,19 @@ const Game = (props) => {
   const allWords = props.cardState
     .reduce((all, row) => [...all, ...row.map(getWord)], []);
 
+  const onClueGiven = () => { setInputShown(false); }
+
   return (
     <React.Fragment>
+      {clueGiven ? (
+        <div>
+          <p>Clue given by your partner:</p>
+          <p>{`${clueGiven[0]} - ${clueGiven[1]}`}</p>
+        </div>
+      ) : inputShown
+          ? null
+          : <p>Waiting for your partner...</p>
+      }
       {props.cardState.map(row => (
         <div>
           {row.map(({ word, type }) => (
@@ -33,8 +48,7 @@ const Game = (props) => {
           ))}
         </div>
       ))}
-      {props.playerNum && (<p>I am player {props.playerNum}!</p>)}
-      {inputShown && <ClueInput allWords={allWords} />}
+      {inputShown && <ClueInput allWords={allWords} onClueGiven={onClueGiven} />}
     </React.Fragment>
   );
 };

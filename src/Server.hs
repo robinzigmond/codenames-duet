@@ -21,6 +21,7 @@ import           Data.Aeson                     (FromJSON (..), Options,
                                                  tagSingleConstructors)
 import           Data.ByteString.Lazy           (ByteString)
 import           Data.Char                      (isDigit)
+import           Data.Maybe                     (listToMaybe)
 import qualified Data.Text                      as T (pack, span, unpack)
 import           GHC.Generics                   (Generic)
 import           Network.HTTP.Types             (status400)
@@ -91,6 +92,7 @@ data State =
 data MessageIn
   = NewGame
   | JoinedGame GameId
+  | ClueGiven ByteString Int
   deriving (Eq, Show, Generic)
 
 customOptions :: Options
@@ -118,6 +120,7 @@ data MessageOut
   | CardsForGame Int [[Card]] KeyCardSide
   | GameStarted GameId
   | CantJoin ByteString
+  | ClueReceived ByteString Int
   deriving (Generic)
 
 instance ToJSON GameId where
@@ -183,17 +186,39 @@ listen :: Connection -> ClientId -> MVar State -> IO ()
 listen conn clientId stateRef =
   forever $ do
     message <- receiveData conn
-    msgToSend <- respond clientId stateRef message
+    (connectionToRespondOn, msgToSend) <- respond conn clientId stateRef message
     -- send data back
-    sendTextData conn $ encode msgToSend
+    sendTextData connectionToRespondOn $ encode msgToSend
 
-respond :: ClientId -> MVar State -> ByteString -> IO Value
-respond clientId stateRef msg = do
-  State clients _ <- readMVar stateRef
+otherPlayer :: [Game] -> ClientId -> Maybe ClientId
+otherPlayer games clientId =
+  case findAs player1 of
+    (g:_) -> player2 g
+    [] ->
+      case findAs player2 of
+        (g:_) -> player1 g
+        []    -> Nothing
+  where
+    findAs player = filter ((== (Just clientId)) . player) games
+
+findByClientId :: [Client] -> ClientId -> Maybe Connection
+findByClientId clients clientId =
+  fmap snd . listToMaybe $ filter ((== clientId) . fst) clients
+
+otherPlayerConn :: ClientId -> [Client] -> [Game] -> Maybe Connection
+otherPlayerConn clientId clients games =
+  otherPlayer games clientId >>= findByClientId clients
+
+respond ::
+     Connection
+  -> ClientId
+  -> MVar State
+  -> ByteString
+  -> IO (Connection, Value)
+respond conn clientId stateRef msg = do
+  State clients allGames <- readMVar stateRef
   case (decode msg) of
-    Nothing -> do
-      print msg
-      return . toJSON $ Error "unrecognised message!"
+    Nothing -> return $ (conn, toJSON $ Error "unrecognised message!")
     Just decoded ->
       case decoded of
         NewGame
@@ -201,7 +226,7 @@ respond clientId stateRef msg = do
           -- client to that game
          -> do
           newId <- makeNewGame stateRef
-          return . toJSON $ GameStarted newId
+          return $ (conn, toJSON $ GameStarted newId)
         JoinedGame id
           -- add cards and player to gamestate in MVar
          -> do
@@ -224,12 +249,21 @@ respond clientId stateRef msg = do
                               Nothing -> (1, side1)
                       return $
                         ( State clients withJoined
-                        , CardsForGame myPlayerNum (cards game) (correctSide $ keyCard game))
+                        , CardsForGame
+                            myPlayerNum
+                            (cards game)
+                            (correctSide $ keyCard game))
                     Nothing ->
                       return
                         (state, CantJoin "This game already has 2 players.")
                 [] -> return (state, CantJoin "This game does not exist.")
-          return . toJSON $ message
+          return $ (conn, toJSON message)
+        ClueGiven clueWord clueNumber ->
+          case otherPlayerConn clientId clients allGames of
+            Just theConn ->
+              return (theConn, toJSON $ ClueReceived clueWord clueNumber)
+            Nothing ->
+              return (conn, toJSON $ Error "no other player in this game yet")
 
 wsApp :: MVar State -> ServerApp
 wsApp stateRef pendingConn = do

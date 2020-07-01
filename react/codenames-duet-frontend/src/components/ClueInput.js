@@ -31,7 +31,7 @@ const InputStyle = styled.div`
   }
 `;
 
-const GuessInput = (props) => {
+const ClueInput = (props) => {
   const [isFirstTurn, setIsFirstTurn] = useState(true);
   const [clueWord, setClueWord] = useState('');
   const [clueNumber, setClueNumber] = useState('');
@@ -55,22 +55,27 @@ const GuessInput = (props) => {
 
   const onSubmitGuess = () => {
     if (props.allWords.includes(clueWord.toUpperCase())) {
-      setClueError("you can't guess a word which is already on the board!");
+      setClueError('you can\'t guess a word which is already on the board!');
     }
     else if (Number.isNaN(clueNumber) || +clueNumber < 1) {
-      setClueError("you must guess a positive number!");
+      setClueError('you must guess a positive number!');
     }
     else {
       setClueError('');
-      console.log(`submitted clue: ${clueWord}, ${clueNumber}`)
+      setIsFirstTurn(false);
+      sendMessage({
+        type: 'ClueGiven',
+        message: [clueWord, +clueNumber]
+      });
+      props.onClueGiven();
     }
   }
 
   return (
     <InputStyle>
-      {isFirstTurn && (
+      {isFirstTurn ? (
         <React.Fragment>
-          <p><strong>As it's the first turn, your partner is also able to guess!</strong></p>
+          <p><strong>As it's the first turn, your partner is also able to give a clue!</strong></p>
           <p>
             <strong>
               You might want to discuss with them who should go first
@@ -78,7 +83,7 @@ const GuessInput = (props) => {
             </strong>
           </p>
         </React.Fragment>
-      )}
+      ) : <p><strong>Enter your clue:</strong></p>}
       {clueError && <p class="clue-error">{clueError}</p>}
       <label htmlFor="clue-word">Clue:</label>
       <input id="clue-word" type="text" onChange={updateClue} value={clueWord} />
@@ -89,4 +94,4 @@ const GuessInput = (props) => {
   );
 }
 
-export default GuessInput;
+export default ClueInput;
