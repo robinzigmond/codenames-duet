@@ -2,8 +2,10 @@
 
 module GameTypes
   ( Card
+  , CardType
   , KeyCardSide
   , KeyCard(..)
+  , lookupResult
   , makeKeyCard
   , rotateSide
   ) where
@@ -48,3 +50,9 @@ makeKeyCard agents assassins =
 
 rotateSide :: KeyCardSide -> KeyCardSide
 rotateSide (KeyCardSide types) = KeyCardSide . reverse $ map reverse types
+
+lookupSide :: Int -> Int -> KeyCardSide -> CardType
+lookupSide row col (KeyCardSide types) = (types !! (row - 1)) !! (col - 1)
+
+lookupResult :: Int -> Int -> (KeyCard -> KeyCardSide) -> KeyCard -> CardType
+lookupResult row col whichSide keyCard = lookupSide row col (whichSide keyCard)

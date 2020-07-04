@@ -15,11 +15,16 @@ const CardStyle = styled.div`
       font-weight: bold;
       color: ${props => props.type === 'assassin' ? '#f5f0f0' : '#2a2952'};
       letter-spacing: 0.5px;
+      cursor: ${props => props.guessMode ? 'pointer' : 'normal'};
   }
 `;
 
 const Card = (props) => (
-  <CardStyle type={props.type}>
+  <CardStyle
+    type={props.type}
+    guessMode={props.guessMode}
+    onClick={props.guessCard}
+  >
     <p>{props.cardText}</p>
   </CardStyle>
 );

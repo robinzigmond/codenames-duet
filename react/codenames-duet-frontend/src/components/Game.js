@@ -5,16 +5,16 @@ import Card from './Card';
 import ClueInput from './ClueInput';
 
 const Game = (props) => {
-  const [inputShown, setInputShown] = useState(true);
+  const [isClueing, setisClueing] = useState(true);
   const [clueGiven, setClueGiven] = useState(null);
 
-  useMessageInput((received) => {
+  const sendMessage = useMessageInput((received) => {
     if (received) {
       console.log(received);
       const { type, message } = received;
       switch (type) {
         case 'ClueReceived':
-          setInputShown(false);
+          setisClueing(false);
           setClueGiven(message);
           break;
         default:
@@ -28,7 +28,15 @@ const Game = (props) => {
   const allWords = props.cardState
     .reduce((all, row) => [...all, ...row.map(getWord)], []);
 
-  const onClueGiven = () => { setInputShown(false); }
+  const onClueGiven = () => { setisClueing(false); }
+
+  const guessCard = (row, col) => () => {
+    if (clueGiven) {
+      console.log("SENDING GUESS:");
+      console.log([row, col]);
+      sendMessage({ type: 'CardGuessed', message: [row, col] });
+    }
+  }
 
   return (
     <React.Fragment>
@@ -37,18 +45,23 @@ const Game = (props) => {
           <p>Clue given by your partner:</p>
           <p>{`${clueGiven[0]} - ${clueGiven[1]}`}</p>
         </div>
-      ) : inputShown
+      ) : isClueing
           ? null
-          : <p>Waiting for your partner...</p>
+          : <p>Your partner is guessing!</p>
       }
-      {props.cardState.map(row => (
+      {props.cardState.map((row, rowNo) => (
         <div>
-          {row.map(({ word, type }) => (
-            <Card cardText={word} type={type.toLowerCase()} />
+          {row.map(({ word, type }, colNo) => (
+            <Card
+              cardText={word}
+              type={type.toLowerCase()}
+              guessMode={!!clueGiven}
+              guessCard={guessCard(rowNo + 1, colNo + 1)}
+            />
           ))}
         </div>
       ))}
-      {inputShown && <ClueInput allWords={allWords} onClueGiven={onClueGiven} />}
+      {isClueing && <ClueInput allWords={allWords} onClueGiven={onClueGiven} />}
     </React.Fragment>
   );
 };

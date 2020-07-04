@@ -93,6 +93,7 @@ data MessageIn
   = NewGame
   | JoinedGame GameId
   | ClueGiven ByteString Int
+  | CardGuessed Int Int
   deriving (Eq, Show, Generic)
 
 customOptions :: Options
@@ -121,6 +122,7 @@ data MessageOut
   | GameStarted GameId
   | CantJoin ByteString
   | ClueReceived ByteString Int
+  | CardGuessedResponse Int Int CardType
   deriving (Generic)
 
 instance ToJSON GameId where
@@ -186,20 +188,23 @@ listen :: Connection -> ClientId -> MVar State -> IO ()
 listen conn clientId stateRef =
   forever $ do
     message <- receiveData conn
-    (connectionToRespondOn, msgToSend) <- respond conn clientId stateRef message
+    --(connectionToRespondOn, msgToSend) <- respond conn clientId stateRef message
+    allToSend <- respond conn clientId stateRef message
     -- send data back
-    sendTextData connectionToRespondOn $ encode msgToSend
+    forM_ allToSend $ \(connectionToRespondOn, msgToSend) ->
+      sendTextData connectionToRespondOn $ encode msgToSend
+
+findAs :: ClientId -> [Game] -> (Game -> Maybe ClientId) -> [Game]
+findAs clientId games player = filter ((== (Just clientId)) . player) games
 
 otherPlayer :: [Game] -> ClientId -> Maybe ClientId
 otherPlayer games clientId =
-  case findAs player1 of
+  case findAs clientId games player1 of
     (g:_) -> player2 g
     [] ->
-      case findAs player2 of
+      case findAs clientId games player2 of
         (g:_) -> player1 g
         []    -> Nothing
-  where
-    findAs player = filter ((== (Just clientId)) . player) games
 
 findByClientId :: [Client] -> ClientId -> Maybe Connection
 findByClientId clients clientId =
@@ -209,16 +214,36 @@ otherPlayerConn :: ClientId -> [Client] -> [Game] -> Maybe Connection
 otherPlayerConn clientId clients games =
   otherPlayer games clientId >>= findByClientId clients
 
+findGameWithClient ::
+     Bool -> ClientId -> [Game] -> Maybe (KeyCard -> KeyCardSide, Game)
+findGameWithClient returnOther clientId allGames =
+  case findAs clientId allGames player1 of
+    (g:_) ->
+      Just
+        ( if returnOther
+            then side2
+            else side1
+        , g)
+    [] ->
+      case findAs clientId allGames player2 of
+        (g:_) ->
+          Just
+            ( if returnOther
+                then side1
+                else side2
+            , g)
+        [] -> Nothing
+
 respond ::
      Connection
   -> ClientId
   -> MVar State
   -> ByteString
-  -> IO (Connection, Value)
+  -> IO [(Connection, Value)]
 respond conn clientId stateRef msg = do
   State clients allGames <- readMVar stateRef
   case (decode msg) of
-    Nothing -> return $ (conn, toJSON $ Error "unrecognised message!")
+    Nothing -> return [(conn, toJSON $ Error "unrecognised message!")]
     Just decoded ->
       case decoded of
         NewGame
@@ -226,7 +251,7 @@ respond conn clientId stateRef msg = do
           -- client to that game
          -> do
           newId <- makeNewGame stateRef
-          return $ (conn, toJSON $ GameStarted newId)
+          return [(conn, toJSON $ GameStarted newId)]
         JoinedGame id
           -- add cards and player to gamestate in MVar
          -> do
@@ -257,13 +282,34 @@ respond conn clientId stateRef msg = do
                       return
                         (state, CantJoin "This game already has 2 players.")
                 [] -> return (state, CantJoin "This game does not exist.")
-          return $ (conn, toJSON message)
+          return [(conn, toJSON message)]
         ClueGiven clueWord clueNumber ->
           case otherPlayerConn clientId clients allGames of
             Just theConn ->
-              return (theConn, toJSON $ ClueReceived clueWord clueNumber)
+              return [(theConn, toJSON $ ClueReceived clueWord clueNumber)]
             Nothing ->
-              return (conn, toJSON $ Error "no other player in this game yet")
+              return [(conn, toJSON $ Error "no other player in this game yet")]
+        CardGuessed row col ->
+          case otherPlayerConn clientId clients allGames of
+            Just otherConn
+              -- look up game to get the keycard,
+              -- and then use the connection id to find which side
+             -> do
+              let maybeGameAndSide = findGameWithClient True clientId allGames
+              case maybeGameAndSide of
+                Nothing ->
+                  return
+                    [ ( conn
+                      , toJSON $ Error "can't find a game with this player!")
+                    ]
+                Just (otherSide, theGame) -> do
+                  let result = lookupResult row col otherSide (keyCard theGame)
+                  return
+                    [ (conn, toJSON $ CardGuessedResponse row col result)
+                    , (otherConn, toJSON $ CardGuessedResponse row col result)
+                    ]
+            Nothing ->
+              return [(conn, toJSON $ Error "no other player in this game yet")]
 
 wsApp :: MVar State -> ServerApp
 wsApp stateRef pendingConn = do
