@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import useMessageInput from './hooks/useMessageInput';
 import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
+import useMessageInput from './hooks/useMessageInput';
 import Game from './components/Game';
 
 const StyledApp = styled.div`

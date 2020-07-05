@@ -32,7 +32,6 @@ const InputStyle = styled.div`
 `;
 
 const ClueInput = (props) => {
-  const [isFirstTurn, setIsFirstTurn] = useState(true);
   const [clueWord, setClueWord] = useState('');
   const [clueNumber, setClueNumber] = useState('');
   const [clueError, setClueError] = useState('');
@@ -46,23 +45,21 @@ const ClueInput = (props) => {
       console.log(received);
       const { type, message } = received;
       switch (type) {
-
         default:
           break;
       }
     }
   });
 
-  const onSubmitGuess = () => {
+  const onSubmitClue = () => {
     if (props.allWords.includes(clueWord.toUpperCase())) {
-      setClueError('you can\'t guess a word which is already on the board!');
+      setClueError('you can\'t clue a word which is already on the board!');
     }
-    else if (Number.isNaN(clueNumber) || +clueNumber < 1) {
-      setClueError('you must guess a positive number!');
+    else if (Number.isNaN(+clueNumber) || +clueNumber < 1) {
+      setClueError('you must give a positive number!');
     }
     else {
       setClueError('');
-      setIsFirstTurn(false);
       sendMessage({
         type: 'ClueGiven',
         message: [clueWord, +clueNumber]
@@ -73,7 +70,7 @@ const ClueInput = (props) => {
 
   return (
     <InputStyle>
-      {isFirstTurn ? (
+      {props.isFirstTurn ? (
         <React.Fragment>
           <p><strong>As it's the first turn, your partner is also able to give a clue!</strong></p>
           <p>
@@ -89,7 +86,7 @@ const ClueInput = (props) => {
       <input id="clue-word" type="text" onChange={updateClue} value={clueWord} />
       <label htmlFor="clue-number">Number of words:</label>
       <input id="clue-number" type="number" onChange={updateNumber} value={clueNumber} />
-      <button className="clue" type="submit" onClick={onSubmitGuess}>Submit Clue!</button>
+      <button className="clue" type="submit" onClick={onSubmitClue}>Submit Clue!</button>
     </InputStyle>
   );
 }

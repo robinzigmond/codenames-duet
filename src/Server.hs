@@ -71,19 +71,13 @@ data GameId =
     }
   deriving (Eq, Show)
 
-data CurrentPlayer
-  = Player1
-  | Player2
-  | Neither
-
 data Game =
   Game
-    { gameId        :: GameId
-    , player1       :: Maybe ClientId
-    , player2       :: Maybe ClientId
-    , cards         :: [[Card]]
-    , keyCard       :: KeyCard
-    , currentPlayer :: CurrentPlayer
+    { gameId  :: GameId
+    , player1 :: Maybe ClientId
+    , player2 :: Maybe ClientId
+    , cards   :: [[Card]]
+    , keyCard :: KeyCard
     }
 
 data State =
@@ -94,6 +88,7 @@ data MessageIn
   | JoinedGame GameId
   | ClueGiven ByteString Int
   | CardGuessed Int Int
+  | GuessingStopped
   deriving (Eq, Show, Generic)
 
 customOptions :: Options
@@ -123,6 +118,7 @@ data MessageOut
   | CantJoin ByteString
   | ClueReceived ByteString Int
   | CardGuessedResponse Int Int CardType
+  | GuessingStoppedResponse
   deriving (Generic)
 
 instance ToJSON GameId where
@@ -181,7 +177,7 @@ makeNewGame stateRef =
     newId <- newGameId (map gameId games)
     cards <- randomCardsIO
     keyCard <- randomKeyCardIO
-    let newGame = Game newId Nothing Nothing cards keyCard Neither
+    let newGame = Game newId Nothing Nothing cards keyCard
     return $ (State clients (newGame : games), newId)
 
 listen :: Connection -> ClientId -> MVar State -> IO ()
@@ -308,6 +304,12 @@ respond conn clientId stateRef msg = do
                     [ (conn, toJSON $ CardGuessedResponse row col result)
                     , (otherConn, toJSON $ CardGuessedResponse row col result)
                     ]
+            Nothing ->
+              return [(conn, toJSON $ Error "no other player in this game yet")]
+        GuessingStopped ->
+          case otherPlayerConn clientId clients allGames of
+            Just otherConn ->
+              return [(otherConn, toJSON GuessingStoppedResponse)]
             Nothing ->
               return [(conn, toJSON $ Error "no other player in this game yet")]
 
