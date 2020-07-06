@@ -38,6 +38,14 @@ const App = () => {
   const history = useHistory();
   const gameId = location.pathname.slice(1);
 
+  const initialState = (words, keyCard) => (words.length && keyCard.length)
+    ? [0, 1, 2, 3, 4].map(row =>
+      [0, 1, 2, 3, 4].map(col =>
+        ({ word: words[row][col], type: keyCard[row][col], status: "open" })
+      )
+    )
+    : [];
+
   const sendMessage = useMessageInput((received) => {
     if (received) {
       console.log(received);
@@ -46,8 +54,8 @@ const App = () => {
         case 'CardsForGame':
           const [myPlayerNum, cards, keyCard] = message;
           setPlayerNum(myPlayerNum);
-          setCards(cards);
           setKey(keyCard);
+          setCards(initialState(cards, keyCard));
           break;
         case 'GameStarted':
           const gameId = message;
@@ -72,13 +80,7 @@ const App = () => {
     sendMessage({ type: 'NewGame' });
   };
 
-  const cardState = cards.length
-    ? [0, 1, 2, 3, 4].map(row =>
-      [0, 1, 2, 3, 4].map(col =>
-        ({ word: cards[row][col], type: key[row][col] })
-      )
-    )
-    : [];
+  const updateStatuses = (newCards) => { setCards(newCards); }
 
   return (
     <StyledApp>
@@ -87,7 +89,11 @@ const App = () => {
         {error ?
           (<p>{error}</p>)
           : gameId ?
-            <Game cardState={cardState} playerNum={playerNum} />
+            <Game
+              cardState={cards}
+              playerNum={playerNum}
+              updateStatuses={updateStatuses}
+            />
             : <button onClick={onNewGame}>
               NEW GAME
             </button>}
