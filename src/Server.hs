@@ -30,8 +30,8 @@ import           Network.Wai.Application.Static (defaultWebAppSettings,
                                                  ssIndices, ssLookupFile,
                                                  staticApp)
 import           Network.WebSockets             (Connection, ServerApp,
-                                                 acceptRequest, forkPingThread,
-                                                 receiveData, sendTextData)
+                                                 acceptRequest, receiveData,
+                                                 sendTextData, withPingThread)
 import           System.Random                  (getStdGen, randomRs)
 import           Text.Pandoc.UTF8               (fromStringLazy, fromTextLazy,
                                                  toStringLazy, toTextLazy)
@@ -317,5 +317,5 @@ wsApp :: MVar State -> ServerApp
 wsApp stateRef pendingConn = do
   conn <- acceptRequest pendingConn
   clientId <- connectClient conn stateRef
-  forkPingThread conn 30
-  finally (listen conn clientId stateRef) (disconnectClient clientId stateRef)
+  withPingThread conn 30 (return ()) $
+    finally (listen conn clientId stateRef) (disconnectClient clientId stateRef)
