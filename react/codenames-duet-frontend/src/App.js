@@ -33,7 +33,6 @@ const App = () => {
   const [cards, setCards] = useState([]);
   const [key, setKey] = useState([]);
   const [error, setError] = useState('');
-  const [playerNum, setPlayerNum] = useState(null);
   const location = useLocation();
   const history = useHistory();
   const gameId = location.pathname.slice(1);
@@ -52,8 +51,7 @@ const App = () => {
       const { type, message } = received;
       switch (type) {
         case 'CardsForGame':
-          const [myPlayerNum, cards, keyCard] = message;
-          setPlayerNum(myPlayerNum);
+          const [cards, keyCard] = message;
           setKey(keyCard);
           setCards(initialState(cards, keyCard));
           break;
@@ -76,11 +74,17 @@ const App = () => {
     }
   }, [gameId]);
 
-  const onNewGame = () => {
-    sendMessage({ type: 'NewGame' });
+  const onNewGame = (continueGame) => {
+    sendMessage(continueGame ? { type: 'NextGame', message: gameId } : { type: 'NewGame' });
   };
 
   const updateStatuses = (newCards) => { setCards(newCards); }
+
+  const newGameButton = continueGame => (
+    <button onClick={() => onNewGame(continueGame)}>
+      NEW GAME
+    </button>
+  );
 
   return (
     <StyledApp>
@@ -91,12 +95,10 @@ const App = () => {
           : gameId ?
             <Game
               cardState={cards}
-              playerNum={playerNum}
               updateStatuses={updateStatuses}
+              newGameButton={newGameButton(true)}
             />
-            : <button onClick={onNewGame}>
-              NEW GAME
-            </button>}
+            : newGameButton(false)}
       </div>
     </StyledApp>
   );

@@ -32,7 +32,7 @@ import           Network.Wai.Application.Static (defaultWebAppSettings,
 import           Network.WebSockets             (Connection, ServerApp,
                                                  acceptRequest, receiveData,
                                                  sendTextData, withPingThread)
-import           System.Random                  (getStdGen, randomRs)
+import           System.Random                  (getStdGen, randomIO, randomRs)
 import           Text.Pandoc.UTF8               (fromStringLazy, fromTextLazy,
                                                  toStringLazy, toTextLazy)
 import           WaiAppStatic.Types             (unsafeToPiece)
@@ -85,6 +85,7 @@ data State =
 
 data MessageIn
   = NewGame
+  | NextGame GameId
   | JoinedGame GameId
   | ClueGiven ByteString Int
   | CardGuessed Int Int
@@ -113,7 +114,7 @@ instance FromJSON MessageIn where
 
 data MessageOut
   = Error ByteString
-  | CardsForGame Int [[Card]] KeyCardSide
+  | CardsForGame [[Card]] KeyCardSide
   | GameStarted GameId
   | CantJoin ByteString
   | ClueReceived ByteString Int
@@ -178,13 +179,23 @@ makeNewGame stateRef =
     cards <- randomCardsIO
     keyCard <- randomKeyCardIO
     let newGame = Game newId Nothing Nothing cards keyCard
-    return $ (State clients (newGame : games), newId)
+    return (State clients (newGame : games), newId)
+
+makeNextGame :: MVar State -> GameId -> IO ([[Card]], KeyCard)
+makeNextGame stateRef gameId =
+  modifyMVar stateRef $ \(State clients games) -> do
+    cards <- randomCardsIO
+    keyCard <- randomKeyCardIO
+    let adjustGame g@(Game id _ _ _ _) =
+          if id == gameId
+            then g {cards = cards, keyCard = keyCard}
+            else g
+    return (State clients (map adjustGame games), (cards, keyCard))
 
 listen :: Connection -> ClientId -> MVar State -> IO ()
 listen conn clientId stateRef =
   forever $ do
     message <- receiveData conn
-    --(connectionToRespondOn, msgToSend) <- respond conn clientId stateRef message
     allToSend <- respond conn clientId stateRef message
     -- send data back
     forM_ allToSend $ \(connectionToRespondOn, msgToSend) ->
@@ -248,6 +259,23 @@ respond conn clientId stateRef msg = do
          -> do
           newId <- makeNewGame stateRef
           return [(conn, toJSON $ GameStarted newId)]
+        NextGame id
+          -- do the same, but just generate cards and keycard, keeping the gameID the same
+         ->
+          case otherPlayerConn clientId clients allGames of
+            Nothing ->
+              return [(conn, toJSON $ Error "no other player in this game yet")]
+            Just theConn -> do
+              (cards, keycard) <- makeNextGame stateRef id
+              randomBool <- randomIO
+              let (p1side, p2side) =
+                    if randomBool
+                      then (side1, side2)
+                      else (side2, side1)
+              return
+                [ (conn, toJSON $ CardsForGame cards (p1side keycard))
+                , (theConn, toJSON $ CardsForGame cards (p2side keycard))
+                ]
         JoinedGame id
           -- add cards and player to gamestate in MVar
          -> do
@@ -270,10 +298,7 @@ respond conn clientId stateRef msg = do
                               Nothing -> (1, side1)
                       return $
                         ( State clients withJoined
-                        , CardsForGame
-                            myPlayerNum
-                            (cards game)
-                            (correctSide $ keyCard game))
+                        , CardsForGame (cards game) (correctSide $ keyCard game))
                     Nothing ->
                       return
                         (state, CantJoin "This game already has 2 players.")

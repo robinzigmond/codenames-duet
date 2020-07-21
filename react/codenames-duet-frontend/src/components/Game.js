@@ -35,10 +35,37 @@ const Game = (props) => {
     setPartnerClueing(true);
   }
 
+  const setStatus = (theRow, theCol, status) => props.cardState.map((row, rowIndex) => (
+    (rowIndex === theRow - 1) ? (
+      row.map((prevCard, colIndex) => (
+        (colIndex === theCol - 1) ? { ...prevCard, status } : prevCard
+      ))
+    ) : row
+  ));
+
+
+  const stopGuessing = () => {
+    sendMessage({ type: 'GuessingStopped' });
+    setIsGuessing(false);
+    setIsClueing(true);
+    setClueGiven(null);
+    setPartnerClueing(false);
+  }
+
   const sendMessage = useMessageInput((received) => {
     if (received) {
       const { type, message } = received;
       switch (type) {
+        case 'CardsForGame':
+          // reset everything to starting state:
+          setIsClueing(true);
+          setIsGuessing(false);
+          setClueGiven(null);
+          setHasGuessed(false);
+          setIsFirstTurn(true);
+          setPartnerClueing(false);
+          setGameStatus('ongoing');
+          break;
         case 'ClueReceived':
           setIsClueing(false);
           setIsGuessing(true);
@@ -75,14 +102,6 @@ const Game = (props) => {
     }
   });
 
-  const setStatus = (theRow, theCol, status) => props.cardState.map((row, rowIndex) => (
-    (rowIndex === theRow - 1) ? (
-      row.map((prevCard, colIndex) => (
-        (colIndex === theCol - 1) ? { ...prevCard, status } : prevCard
-      ))
-    ) : row
-  ));
-
   const getWord = cardObj => cardObj.word;
 
   const allWords = props.cardState
@@ -99,27 +118,27 @@ const Game = (props) => {
     }
   }
 
-  const stopGuessing = () => {
-    sendMessage({ type: 'GuessingStopped' });
-    setIsGuessing(false);
-    setIsClueing(true);
-    setClueGiven(null);
-    setPartnerClueing(false);
-  }
+  const gameFinished = hasWon => {
+    const message = hasWon ? 'Well done, you won!' : 'Sorry you lost!';
+    return (
+      <div>
+        <p>{message}</p>
+        {props.newGameButton /* TODO, get to send new message, to start new game "in place" */}
+      </div>
+    );
+  };
 
-  return (
+  const ongoingMessage = clueGiven ? (
+    <div>
+      <p>Clue given by your partner:</p>
+      <p>{`${clueGiven[0]} - ${clueGiven[1]}`}</p>
+    </div>
+  ) : isClueing
+      ? null
+      : <p>Your partner is {partnerClueing ? 'thinking up a clue...' : 'guessing!'}</p>
+
+  const renderGame = () => (
     <React.Fragment>
-      {gameStatus === 'lost' ? <p>Sorry you lost!</p> :
-        gameStatus === 'won' ? <p>Well done, you won!</p> :
-          clueGiven ? (
-            <div>
-              <p>Clue given by your partner:</p>
-              <p>{`${clueGiven[0]} - ${clueGiven[1]}`}</p>
-            </div>
-          ) : isClueing
-              ? null
-              : <p>Your partner is {partnerClueing ? 'thinking up a clue...' : 'guessing!'}</p>
-      }
       {props.cardState.map((row, rowNo) => (
         <div>
           {row.map(({ word, type, status }, colNo) => (
@@ -143,6 +162,13 @@ const Game = (props) => {
           </button>
         </StopGuessingButton>
       }
+    </React.Fragment>
+  );
+
+  return (
+    <React.Fragment>
+      {(gameStatus === 'ongoing') ? ongoingMessage : gameFinished(gameStatus === 'won')}
+      {renderGame()}
     </React.Fragment>
   );
 };
