@@ -22,10 +22,18 @@ const CardStyle = styled.div`
         position: absolute;
         top: 0;
         right: 0;
-        width: ${props => props.status === 'Bystander' ? '30px' : '100%'};
-        height: ${props => props.status === 'Bystander' ? '30px' : '100%'};
-        background-color: ${props => props.status === 'Assassin' ? '#0a0a0a' :
-    props.status === 'Agent' ? '#23f018' : '#ccc'}
+        width: ${props => props.status.startsWith('Bystander') ? '30px' : '100%'};
+        height: ${props => props.status.startsWith('Bystander') ? '30px' : '100%'};
+        background-color: ${props => props.status.startsWith('Bystander') ? '#ccc' : 'transparent'};
+        ${props => {
+    const isBystander = props.status.startsWith('Bystander');
+    if (isBystander) {
+      return `border-${props.status.endsWith('iGuessed') ? 'bottom' : 'top'}: 2px solid #0a0a0a;`;
+    }
+    else {
+      return `border: 5px solid ${props.status === 'Assassin' ? '#030303' : '#0c5008'};`
+    }
+  }};
       }
   }
 `;

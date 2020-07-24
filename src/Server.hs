@@ -14,7 +14,7 @@ import           Control.Monad                  (forM_, forever)
 import           Data.Aeson                     (FromJSON (..), Options,
                                                  SumEncoding (TaggedObject),
                                                  ToJSON (..),
-                                                 Value (Number, Object, String),
+                                                 Value (Number, String),
                                                  decode, defaultOptions, encode,
                                                  genericParseJSON,
                                                  genericToJSON, sumEncoding,
@@ -24,8 +24,7 @@ import           Data.Char                      (isDigit)
 import           Data.Maybe                     (listToMaybe)
 import qualified Data.Text                      as T (pack, span, unpack)
 import           GHC.Generics                   (Generic)
-import           Network.HTTP.Types             (status400)
-import           Network.Wai                    (Application, responseLBS)
+import           Network.Wai                    (Application)
 import           Network.Wai.Application.Static (defaultWebAppSettings,
                                                  ssIndices, ssLookupFile,
                                                  staticApp)

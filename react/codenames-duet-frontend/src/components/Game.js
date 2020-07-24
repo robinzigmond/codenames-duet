@@ -77,7 +77,10 @@ const Game = (props) => {
           if (!isClueing) {
             setHasGuessed(true);
             const [row, col, status] = message;
-            props.updateStatuses(setStatus(row, col, status));
+            const statusToSend = (status === 'Bystander')
+              ? `Bystander-${isGuessing ? 'iGuessed' : 'theyGuessed'}`
+              : status;
+            props.updateStatuses(setStatus(row, col, statusToSend));
             switch (status) {
               case "Bystander":
                 if (isGuessing) {
