@@ -19,6 +19,13 @@ const StopGuessingButton = styled.div`
   }
 `;
 
+// TODO:
+// - add win detection (with message and new game button)
+// - add count (down!) of number of turns taken, and flag loss that way
+// - make turns and allowed incorrect guesses configurable at start of game
+// (by both players?)
+// - show game "log"
+// - somehow restrict clues of "related words?" [probably have to hardcode]
 const Game = (props) => {
   const [isClueing, setIsClueing] = useState(true);
   const [isGuessing, setIsGuessing] = useState(false);
@@ -27,6 +34,8 @@ const Game = (props) => {
   const [isFirstTurn, setIsFirstTurn] = useState(true);
   const [partnerClueing, setPartnerClueing] = useState(false);
   const [gameStatus, setGameStatus] = useState('ongoing');
+
+  const isGuessable = cardObj => ['open', 'Bystander-theyGuessed'].includes(cardObj.status);
 
   const endTurn = () => {
     setIsClueing(false);
@@ -77,9 +86,13 @@ const Game = (props) => {
           if (!isClueing) {
             setHasGuessed(true);
             const [row, col, status] = message;
-            const statusToSend = (status === 'Bystander')
+            let statusToSend = (status === 'Bystander')
               ? `Bystander-${isGuessing ? 'iGuessed' : 'theyGuessed'}`
               : status;
+            if (statusToSend.startsWith('Bystander')
+              && props.cardState[row - 1][col - 1].status.startsWith('Bystander')) {
+              statusToSend = 'Bystander';
+            }
             props.updateStatuses(setStatus(row, col, statusToSend));
             switch (status) {
               case "Bystander":
@@ -108,7 +121,11 @@ const Game = (props) => {
   const getWord = cardObj => cardObj.word;
 
   const allWords = props.cardState
-    .reduce((all, row) => [...all, ...row.map(getWord)], []);
+    .reduce((all, row) => [
+      ...all,
+      ...row.filter(cardObj => !(['Agent', 'Bystander'].includes(cardObj.status)))
+        .map(getWord)
+    ], []);
 
   const onClueGiven = () => {
     setIsFirstTurn(false);
@@ -116,7 +133,7 @@ const Game = (props) => {
   }
 
   const guessCard = (row, col) => () => {
-    if (clueGiven) {
+    if (clueGiven && isGuessable(props.cardState[row - 1][col - 1])) {
       sendMessage({ type: 'CardGuessed', message: [row, col] });
     }
   }

@@ -55,8 +55,11 @@ const ClueInput = (props) => {
     if (props.allWords.includes(clueWord.toUpperCase())) {
       setClueError('you can\'t clue a word which is already on the board!');
     }
-    else if (Number.isNaN(+clueNumber) || +clueNumber < 1) {
-      setClueError('you must give a positive number!');
+    else if (!clueWord) {
+      setClueError('you must give an actual clue!');
+    }
+    else if (Number.isNaN(+clueNumber) || +clueNumber < 0 || +clueNumber % 1 !== 0) {
+      setClueError('you must give a whole number that\'s at least 0!');
     }
     else {
       setClueError('');

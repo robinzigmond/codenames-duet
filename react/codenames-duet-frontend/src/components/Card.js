@@ -15,23 +15,27 @@ const CardStyle = styled.div`
       font-weight: bold;
       color: ${props => props.type === 'assassin' ? '#f5f0f0' : '#2a2952'};
       letter-spacing: 0.5px;
-      cursor: ${props => props.guessMode ? 'pointer' : 'normal'};
+      cursor: ${props => props.guessMode
+    && ['open', 'Bystander-theyGuessed'].includes(props.status)
+    ? 'pointer'
+    : 'normal'};
       position: relative;
 
       .indicator {
         position: absolute;
         top: 0;
         right: 0;
-        width: ${props => props.status.startsWith('Bystander') ? '30px' : '100%'};
-        height: ${props => props.status.startsWith('Bystander') ? '30px' : '100%'};
-        background-color: ${props => props.status.startsWith('Bystander') ? '#ccc' : 'transparent'};
+        width: ${props => props.status.startsWith('Bystander-') ? '30px' : '100%'};
+        height: ${props => props.status.startsWith('Bystander-') ? '30px' : '100%'};
+        background-color: ${props => props.status.startsWith('Bystander-') ? '#ccc' : 'transparent'};
         ${props => {
-    const isBystander = props.status.startsWith('Bystander');
-    if (isBystander) {
+    const isHalfBystander = props.status.startsWith('Bystander-');
+    if (isHalfBystander) {
       return `border-${props.status.endsWith('iGuessed') ? 'bottom' : 'top'}: 2px solid #0a0a0a;`;
     }
     else {
-      return `border: 5px solid ${props.status === 'Assassin' ? '#030303' : '#0c5008'};`
+      return `border: 5px solid ${props.status === 'Assassin' ? '#030303' :
+        props.status === 'Agent' ? '#0c5008' : '#ccc'};`
     }
   }};
       }
