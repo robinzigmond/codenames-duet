@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 import useMessageInput from '../hooks/useMessageInput';
@@ -20,7 +20,6 @@ const StopGuessingButton = styled.div`
 `;
 
 // TODO:
-// - add win detection (with message and new game button)
 // - add count (down!) of number of turns taken, and flag loss that way
 // - make turns and allowed incorrect guesses configurable at start of game
 // (by both players?)
@@ -34,6 +33,17 @@ const Game = (props) => {
   const [isFirstTurn, setIsFirstTurn] = useState(true);
   const [partnerClueing, setPartnerClueing] = useState(false);
   const [gameStatus, setGameStatus] = useState('ongoing');
+
+  const guessedAgents = props.cardState.reduce((total, rowState) =>
+    total + rowState.reduce((rowTotal, card) => rowTotal + +(card.status === 'Agent')
+      , 0)
+    , 0);
+
+  useEffect(() => {
+    if (guessedAgents === 15) {
+      setGameStatus('won');
+    }
+  }, [guessedAgents]);
 
   const isGuessable = cardObj => ['open', 'Bystander-theyGuessed'].includes(cardObj.status);
 
@@ -51,7 +61,6 @@ const Game = (props) => {
       ))
     ) : row
   ));
-
 
   const stopGuessing = () => {
     sendMessage({ type: 'GuessingStopped' });
@@ -95,15 +104,15 @@ const Game = (props) => {
             }
             props.updateStatuses(setStatus(row, col, statusToSend));
             switch (status) {
-              case "Bystander":
+              case 'Bystander':
                 if (isGuessing) {
                   stopGuessing();
                 }
                 break;
-              case "Assassin":
+              case 'Assassin':
                 setGameStatus('lost');
                 break;
-              case "Agent":
+              case 'Agent':
               default:
                 break;
             }
@@ -143,7 +152,7 @@ const Game = (props) => {
     return (
       <div>
         <p>{message}</p>
-        {props.newGameButton /* TODO, get to send new message, to start new game "in place" */}
+        {props.newGameButton}
       </div>
     );
   };
