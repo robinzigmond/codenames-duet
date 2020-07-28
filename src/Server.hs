@@ -14,13 +14,14 @@ import           Control.Monad                  (forM_, forever)
 import           Data.Aeson                     (FromJSON (..), Options,
                                                  SumEncoding (TaggedObject),
                                                  ToJSON (..),
-                                                 Value (Number, String),
-                                                 decode, defaultOptions, encode,
+                                                 Value (Number, String), decode,
+                                                 defaultOptions, encode,
                                                  genericParseJSON,
                                                  genericToJSON, sumEncoding,
                                                  tagSingleConstructors)
 import           Data.ByteString.Lazy           (ByteString)
 import           Data.Char                      (isDigit)
+import           Data.List                      (find)
 import           Data.Maybe                     (listToMaybe)
 import qualified Data.Text                      as T (pack, span, unpack)
 import           GHC.Generics                   (Generic)
@@ -180,7 +181,7 @@ makeNewGame stateRef =
     let newGame = Game newId Nothing Nothing cards keyCard
     return (State clients (newGame : games), newId)
 
-makeNextGame :: MVar State -> GameId -> IO ([[Card]], KeyCard)
+makeNextGame :: MVar State -> GameId -> IO ([[Card]], KeyCard, Maybe ClientId)
 makeNextGame stateRef gameId =
   modifyMVar stateRef $ \(State clients games) -> do
     cards <- randomCardsIO
@@ -189,7 +190,10 @@ makeNextGame stateRef gameId =
           if id == gameId
             then g {cards = cards, keyCard = keyCard}
             else g
-    return (State clients (map adjustGame games), (cards, keyCard))
+    let Just currentGame = find (\(Game id _ _ _ _) -> id == gameId) games
+    return
+      ( State clients (map adjustGame games)
+      , (cards, keyCard, player1 currentGame))
 
 listen :: Connection -> ClientId -> MVar State -> IO ()
 listen conn clientId stateRef =
@@ -265,15 +269,14 @@ respond conn clientId stateRef msg = do
             Nothing ->
               return [(conn, toJSON $ Error "no other player in this game yet")]
             Just theConn -> do
-              (cards, keycard) <- makeNextGame stateRef id
-              randomBool <- randomIO
-              let (p1side, p2side) =
-                    if randomBool
+              (cards, keycard, Just p1) <- makeNextGame stateRef id
+              let (mySide, otherSide) =
+                    if p1 == clientId
                       then (side1, side2)
                       else (side2, side1)
               return
-                [ (conn, toJSON $ CardsForGame cards (p1side keycard))
-                , (theConn, toJSON $ CardsForGame cards (p2side keycard))
+                [ (conn, toJSON $ CardsForGame cards (mySide keycard))
+                , (theConn, toJSON $ CardsForGame cards (otherSide keycard))
                 ]
         JoinedGame id
           -- add cards and player to gamestate in MVar

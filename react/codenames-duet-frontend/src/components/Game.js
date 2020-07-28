@@ -26,6 +26,8 @@ const StopGuessingButton = styled.div`
 // - show game "log"
 // - somehow restrict clues of "related words?" [probably have to hardcode]
 const Game = (props) => {
+  const turnsInGame = 9; // hardcoded, later allow to configure at start of game
+  const [turnsLeft, setTurnsLeft] = useState(turnsInGame);
   const [isClueing, setIsClueing] = useState(true);
   const [isGuessing, setIsGuessing] = useState(false);
   const [clueGiven, setClueGiven] = useState(null);
@@ -45,6 +47,12 @@ const Game = (props) => {
     }
   }, [guessedAgents]);
 
+  useEffect(() => {
+    if (turnsLeft == 0) {
+      setGameStatus('lost');
+    }
+  }, [turnsLeft]);
+
   const isGuessable = cardObj => ['open', 'Bystander-theyGuessed'].includes(cardObj.status);
 
   const endTurn = () => {
@@ -52,6 +60,7 @@ const Game = (props) => {
     setIsGuessing(false);
     setClueGiven(null);
     setPartnerClueing(true);
+    setTurnsLeft(turns => turns - 1);
   }
 
   const setStatus = (theRow, theCol, status) => props.cardState.map((row, rowIndex) => (
@@ -68,6 +77,7 @@ const Game = (props) => {
     setIsClueing(true);
     setClueGiven(null);
     setPartnerClueing(false);
+    setTurnsLeft(turns => turns - 1);
   }
 
   const sendMessage = useMessageInput((received) => {
@@ -83,6 +93,7 @@ const Game = (props) => {
           setIsFirstTurn(true);
           setPartnerClueing(false);
           setGameStatus('ongoing');
+          setTurnsLeft(turnsInGame);
           break;
         case 'ClueReceived':
           setIsClueing(false);
@@ -168,6 +179,7 @@ const Game = (props) => {
 
   const renderGame = () => (
     <React.Fragment>
+      <p>Turns Left: {turnsLeft}</p>
       {props.cardState.map((row, rowNo) => (
         <div>
           {row.map(({ word, type, status }, colNo) => (
