@@ -20,10 +20,12 @@ const StopGuessingButton = styled.div`
 `;
 
 // TODO:
-// - add count (down!) of number of turns taken, and flag loss that way
+// - add "sudden death" turn (rather than autoloss) when turns run out
 // - make turns and allowed incorrect guesses configurable at start of game
 // (by both players?)
+// - allow players to give names
 // - show game "log"
+// - improve colour contrast! Maybe use arrows rather than borders to indicate which side guessed a bystander?
 // - somehow restrict clues of "related words?" [probably have to hardcode]
 const Game = (props) => {
   const turnsInGame = 9; // hardcoded, later allow to configure at start of game
@@ -35,6 +37,7 @@ const Game = (props) => {
   const [isFirstTurn, setIsFirstTurn] = useState(true);
   const [partnerClueing, setPartnerClueing] = useState(false);
   const [gameStatus, setGameStatus] = useState('ongoing');
+  const [hasCluesToGive, setHasCluesToGive] = useState(true);
 
   const guessedAgents = props.cardState.reduce((total, rowState) =>
     total + rowState.reduce((rowTotal, card) => rowTotal + +(card.status === 'Agent')
@@ -53,14 +56,37 @@ const Game = (props) => {
     }
   }, [turnsLeft]);
 
+  useEffect(() => {
+    if (props.cardState.length && hasCluesToGive) {
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 5; col++) {
+          const card = props.cardState[row][col];
+          if (card.type === 'Agent' && card.status === 'open') {
+            return;
+          }
+        }
+      }
+      setHasCluesToGive(false);
+    }
+  }, [props.cardState, hasCluesToGive]);
+
+  useEffect(() => {
+    if (!hasCluesToGive && isClueing) {
+      endTurn(false);
+      sendMessage({ type: 'AllMyCardsGuessed' });
+    }
+  }, [hasCluesToGive, isClueing])
+
   const isGuessable = cardObj => ['open', 'Bystander-theyGuessed'].includes(cardObj.status);
 
-  const endTurn = () => {
+  const endTurn = (turnHappened = true) => {
     setIsClueing(false);
     setIsGuessing(false);
     setClueGiven(null);
     setPartnerClueing(true);
-    setTurnsLeft(turns => turns - 1);
+    if (turnHappened) {
+      setTurnsLeft(turns => turns - 1);
+    }
   }
 
   const setStatus = (theRow, theCol, status) => props.cardState.map((row, rowIndex) => (
@@ -71,13 +97,15 @@ const Game = (props) => {
     ) : row
   ));
 
-  const stopGuessing = () => {
-    sendMessage({ type: 'GuessingStopped' });
+  const stopGuessing = (turnHappened = true) => {
     setIsGuessing(false);
     setIsClueing(true);
     setClueGiven(null);
     setPartnerClueing(false);
-    setTurnsLeft(turns => turns - 1);
+    if (turnHappened) {
+      sendMessage({ type: 'GuessingStopped' });
+      setTurnsLeft(turns => turns - 1);
+    }
   }
 
   const sendMessage = useMessageInput((received) => {
@@ -94,6 +122,7 @@ const Game = (props) => {
           setPartnerClueing(false);
           setGameStatus('ongoing');
           setTurnsLeft(turnsInGame);
+          setHasCluesToGive(true);
           break;
         case 'ClueReceived':
           setIsClueing(false);
@@ -131,6 +160,9 @@ const Game = (props) => {
           break;
         case 'GuessingStoppedResponse':
           endTurn();
+          break;
+        case 'AllMyCardsGuessedResponse':
+          stopGuessing(false);
           break;
         default:
           break;

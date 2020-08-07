@@ -90,6 +90,7 @@ data MessageIn
   | ClueGiven ByteString Int
   | CardGuessed Int Int
   | GuessingStopped
+  | AllMyCardsGuessed
   deriving (Eq, Show, Generic)
 
 customOptions :: Options
@@ -120,6 +121,7 @@ data MessageOut
   | ClueReceived ByteString Int
   | CardGuessedResponse Int Int CardType
   | GuessingStoppedResponse
+  | AllMyCardsGuessedResponse
   deriving (Generic)
 
 instance ToJSON GameId where
@@ -337,6 +339,12 @@ respond conn clientId stateRef msg = do
           case otherPlayerConn clientId clients allGames of
             Just otherConn ->
               return [(otherConn, toJSON GuessingStoppedResponse)]
+            Nothing ->
+              return [(conn, toJSON $ Error "no other player in this game yet")]
+        AllMyCardsGuessed ->
+          case otherPlayerConn clientId clients allGames of
+            Just otherConn ->
+              return [(otherConn, toJSON AllMyCardsGuessedResponse)]
             Nothing ->
               return [(conn, toJSON $ Error "no other player in this game yet")]
 

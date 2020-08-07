@@ -40,7 +40,7 @@ const App = () => {
   const initialState = (words, keyCard) => (words.length && keyCard.length)
     ? [0, 1, 2, 3, 4].map(row =>
       [0, 1, 2, 3, 4].map(col =>
-        ({ word: words[row][col], type: keyCard[row][col], status: "open" })
+        ({ word: words[row][col], type: keyCard[row][col], status: 'open' })
       )
     )
     : [];
